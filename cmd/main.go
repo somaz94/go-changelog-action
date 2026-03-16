@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"os/signal"
 	"strconv"
 	"syscall"
@@ -46,6 +47,9 @@ func run(ctx context.Context) error {
 	if err := os.Chdir(workDir); err != nil {
 		return fmt.Errorf("failed to change directory to %s: %w", workDir, err)
 	}
+
+	// Configure git safe directory to avoid ownership issues in containers
+	exec.Command("git", "config", "--global", "--add", "safe.directory", workDir).Run()
 
 	select {
 	case <-ctx.Done():

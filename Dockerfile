@@ -1,11 +1,19 @@
-# Set the base image to use for subsequent instructions
-FROM alpine:3.23
+# Build stage
+FROM golang:1.23-alpine AS builder
 
-# Set the working directory inside the container
-WORKDIR /usr/src
+WORKDIR /build
 
-# Copy any source file(s) required for the action
-COPY entrypoint.sh .
+COPY go.mod ./
+RUN go mod download
 
-# Configure the container to be run as an executable
-ENTRYPOINT ["/usr/src/entrypoint.sh"]
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /go-changelog-action ./cmd/main.go
+
+# Runtime stage
+FROM alpine:3.21
+
+RUN apk add --no-cache git
+
+COPY --from=builder /go-changelog-action /usr/local/bin/go-changelog-action
+
+ENTRYPOINT ["go-changelog-action"]

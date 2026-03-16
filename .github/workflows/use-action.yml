@@ -1,0 +1,109 @@
+name: Smoke Test (Released Action)
+
+on:
+  workflow_dispatch:
+    inputs:
+      run:
+        description: 'workflow run'
+        required: true
+        default: 'true'
+  workflow_run:
+    workflows: ["Create release"]
+    types:
+      - completed
+
+permissions:
+  contents: write
+
+jobs:
+  smoke-test-dry-run:
+    name: Smoke Test (Dry Run)
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Generate Changelog (dry-run)
+        id: changelog-dry-run
+        uses: somaz94/go-changelog-action@v1
+        with:
+          output_file: CHANGELOG.md
+          dry_run: true
+
+      - name: Verify Dry Run Output
+        run: |
+          echo "changelog_file=${{ steps.changelog-dry-run.outputs.changelog_file }}"
+          echo "entries_count=${{ steps.changelog-dry-run.outputs.entries_count }}"
+          echo "latest_version=${{ steps.changelog-dry-run.outputs.latest_version }}"
+          echo "PASS: dry-run completed successfully"
+
+  smoke-test-generate:
+    name: Smoke Test (Generate)
+    runs-on: ubuntu-latest
+    needs: [smoke-test-dry-run]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Generate Changelog
+        id: changelog
+        uses: somaz94/go-changelog-action@v1
+        with:
+          output_file: CHANGELOG-TEST.md
+          exclude_types: 'style'
+          unreleased: true
+
+      - name: Verify Generated File
+        run: |
+          if [ -f "CHANGELOG-TEST.md" ]; then
+            echo "PASS: CHANGELOG-TEST.md generated"
+            head -20 CHANGELOG-TEST.md
+          else
+            echo "FAIL: CHANGELOG-TEST.md not found"
+            exit 1
+          fi
+
+      - name: Verify Outputs
+        run: |
+          echo "changelog_file=${{ steps.changelog.outputs.changelog_file }}"
+          echo "entries_count=${{ steps.changelog.outputs.entries_count }}"
+          echo "latest_version=${{ steps.changelog.outputs.latest_version }}"
+
+  smoke-test-custom-options:
+    name: Smoke Test (Custom Options)
+    runs-on: ubuntu-latest
+    needs: [smoke-test-generate]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Generate Changelog with Custom Options
+        id: changelog-custom
+        uses: somaz94/go-changelog-action@v1
+        with:
+          output_file: CHANGELOG-CUSTOM.md
+          exclude_types: 'chore,style,ci'
+          include_breaking: true
+          date_format: '2006-01-02'
+          header: '# Release Notes'
+          unreleased: false
+          skip_commits: '^Merge'
+
+      - name: Verify Custom Header
+        run: |
+          if head -1 CHANGELOG-CUSTOM.md | grep -q "# Release Notes"; then
+            echo "PASS: custom header applied"
+          else
+            echo "FAIL: custom header not found"
+            head -5 CHANGELOG-CUSTOM.md
+            exit 1
+          fi

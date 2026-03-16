@@ -1,26 +1,79 @@
-name: The name of your action here
-description: Provide a description here
-author: Your name or organization here
+name: Go Changelog Action
+description: Generate changelogs from Conventional Commits using Go
+author: somaz94
 
-# Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
-  icon: heart
-  color: red
+  icon: file-text
+  color: blue
 
-# Define your inputs here.
 inputs:
-  who-to-greet:
-    description: Your input description here
-    required: true
-    default: World
+  output_file:
+    description: 'Output file path for the changelog'
+    required: false
+    default: 'CHANGELOG.md'
+  tag_pattern:
+    description: 'Regex pattern to match version tags'
+    required: false
+    default: 'v[0-9]*.[0-9]*.[0-9]*'
+  exclude_types:
+    description: 'Comma-separated list of commit types to exclude (e.g., "chore,style")'
+    required: false
+    default: ''
+  include_breaking:
+    description: 'Include BREAKING CHANGE section'
+    required: false
+    default: 'true'
+  date_format:
+    description: 'Date format for changelog entries (Go time format)'
+    required: false
+    default: '2006-01-02'
+  header:
+    description: 'Custom header for the changelog file'
+    required: false
+    default: '# Changelog'
+  unreleased:
+    description: 'Include unreleased changes section'
+    required: false
+    default: 'true'
+  unreleased_title:
+    description: 'Title for unreleased changes section'
+    required: false
+    default: 'Unreleased'
+  skip_commits:
+    description: 'Regex pattern to skip matching commit messages'
+    required: false
+    default: '^Merge'
+  repository_url:
+    description: 'Repository URL for commit/compare links (auto-detected if not set)'
+    required: false
+    default: ''
+  dry_run:
+    description: 'Preview changelog without writing to file'
+    required: false
+    default: 'false'
 
-# Define your outputs here.
 outputs:
-  greeting:
-    description: Your output description here
+  changelog_file:
+    description: 'Path to the generated changelog file'
+  changelog_content:
+    description: 'Generated changelog content'
+  entries_count:
+    description: 'Number of changelog entries generated'
+  latest_version:
+    description: 'Latest version tag found'
 
 runs:
   using: docker
   image: Dockerfile
   env:
-    INPUT_WHO_TO_GREET: ${{ inputs.who-to-greet }}
+    INPUT_OUTPUT_FILE: ${{ inputs.output_file }}
+    INPUT_TAG_PATTERN: ${{ inputs.tag_pattern }}
+    INPUT_EXCLUDE_TYPES: ${{ inputs.exclude_types }}
+    INPUT_INCLUDE_BREAKING: ${{ inputs.include_breaking }}
+    INPUT_DATE_FORMAT: ${{ inputs.date_format }}
+    INPUT_HEADER: ${{ inputs.header }}
+    INPUT_UNRELEASED: ${{ inputs.unreleased }}
+    INPUT_UNRELEASED_TITLE: ${{ inputs.unreleased_title }}
+    INPUT_SKIP_COMMITS: ${{ inputs.skip_commits }}
+    INPUT_REPOSITORY_URL: ${{ inputs.repository_url }}
+    INPUT_DRY_RUN: ${{ inputs.dry_run }}

@@ -2,74 +2,116 @@ name: Continuous Integration
 
 on:
   pull_request:
-    branches:
-      - main
   push:
     branches:
       - main
+    paths-ignore:
+      - '.github/workflows/**'
+      - '**/*.md'
+  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  test-docker:
-    name: Docker Tests
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
 
-    # Run a local registry to push to
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.23'
+
+      - name: Run Go unit tests with coverage
+        run: go test ./internal/... -v -cover -coverprofile=coverage.out
+
+      - name: Display coverage summary
+        run: go tool cover -func=coverage.out
+
+  build-and-push-docker:
+    name: Build and Push Docker
+    needs: unit-tests
+    runs-on: ubuntu-latest
     services:
       registry:
         image: registry:2
         ports:
           - 5001:5000
-
     env:
-      TEST_TAG: localhost:5001/actions/container-action:latest
-
+      TEST_TAG: localhost:5001/actions/go-changelog-action:latest
     steps:
       - name: Checkout
-        id: checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git Safe Directory
+        run: git config --global --add safe.directory ${{ github.workspace }}
 
       - name: Setup Docker BuildX
-        id: setup-buildx
         uses: docker/setup-buildx-action@v4
         with:
           install: true
           driver-opts: network=host
 
       - name: Build the Container
-        id: build
         uses: docker/build-push-action@v7
         with:
           context: .
           push: true
           tags: ${{ env.TEST_TAG }}
 
-      - name: Run the Container
-        id: run
-        env:
-          INPUT_WHO_TO_GREET: Mona Lisa Octocat
+      - name: Run the Container (dry-run)
         run: |
           docker run \
-            --env INPUT_WHO_TO_GREET="${{ env.INPUT_WHO_TO_GREET }}" \
+            --env INPUT_OUTPUT_FILE="CHANGELOG.md" \
+            --env INPUT_TAG_PATTERN="v[0-9]*.[0-9]*.[0-9]*" \
+            --env INPUT_DRY_RUN="true" \
+            --volume ${{ github.workspace }}:/app \
             --rm ${{ env.TEST_TAG }}
 
   test-action:
     name: GitHub Actions Test
     runs-on: ubuntu-latest
+    needs: build-and-push-docker
 
     steps:
       - name: Checkout
-        id: checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-      - name: Test Local Action
+      - name: Test Local Action (dry-run)
         id: test-action
         uses: ./
         with:
-          who-to-greet: Mona Lisa Octocat
+          output_file: CHANGELOG.md
+          dry_run: true
 
-      - name: Print Output
-        id: output
-        run: echo "${{ steps.test-action.outputs.greeting }}"
+      - name: Verify Output
+        run: |
+          echo "changelog_file=${{ steps.test-action.outputs.changelog_file }}"
+          echo "entries_count=${{ steps.test-action.outputs.entries_count }}"
+          echo "latest_version=${{ steps.test-action.outputs.latest_version }}"
+
+  ci-result:
+    name: CI Result
+    if: always()
+    needs:
+      - unit-tests
+      - build-and-push-docker
+      - test-action
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all jobs
+        run: |
+          if [ "${{ contains(needs.*.result, 'failure') }}" = "true" ] || \
+             [ "${{ contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+            echo "[FAIL]Some jobs failed or were cancelled"
+            exit 1
+          fi
+          echo "[PASS]All CI jobs passed"

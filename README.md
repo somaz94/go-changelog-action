@@ -1,214 +1,194 @@
-# Create a Container Action
+# Go Changelog Action
 
-![Continuous Integration](https://github.com/actions/container-action/actions/workflows/ci.yml/badge.svg)
-![Linter](https://github.com/actions/container-action/actions/workflows/linter.yml/badge.svg)
+[![Continuous Integration](https://github.com/somaz94/go-changelog-action/actions/workflows/ci.yml/badge.svg)](https://github.com/somaz94/go-changelog-action/actions/workflows/ci.yml)
+[![Lint Codebase](https://github.com/somaz94/go-changelog-action/actions/workflows/linter.yml/badge.svg)](https://github.com/somaz94/go-changelog-action/actions/workflows/linter.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Use this template to bootstrap the creation of a container action. :rocket:
+A Go-based GitHub Action that generates changelogs from
+[Conventional Commits](https://www.conventionalcommits.org/).
 
-This template includes compilation support, tests, a validation workflow,
-publishing, and versioning guidance.
+## Features
 
-## Create Your Own Action
-
-To create your own action, you can use this repository as a template! Just
-follow the below instructions:
-
-1. Click the **Use this template** button at the top of the repository
-1. Select **Create a new repository**
-1. Select an owner and name for your new repository
-1. Click **Create repository**
-1. Clone your new repository
-
-> [!IMPORTANT]
->
-> Make sure to remove or update the [`CODEOWNERS`](./CODEOWNERS) file! For
-> details on how to use this file, see
-> [About code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners).
-
-## Initial Setup
-
-After you've cloned the repository to your local machine or codespace, you'll
-need to perform some initial setup steps before you can develop your action.
-
-> [!NOTE]
->
-> You'll need to have a reasonably modern version of
-> [Docker](https://www.docker.com/get-started/) handy (e.g. docker engine
-> version 20 or later).
-
-1. :hammer_and_wrench: Build the container
-
-   Make sure to replace `actions/container-action` with an appropriate label for
-   your container.
-
-   ```bash
-   docker build -t actions/container-action .
-   ```
-
-1. :white_check_mark: Test the container
-
-   You can pass individual environment variables using the `--env` or `-e` flag.
-
-   ```bash
-   $ docker run --env INPUT_WHO_TO_GREET="Mona Lisa Octocat" actions/container-action
-   ::notice file=entrypoint.sh,line=7::Hello, Mona Lisa Octocat!
-   ```
-
-   Or you can pass a file with environment variables using `--env-file`.
-
-   ```bash
-   $ cat ./.env.test
-   INPUT_WHO_TO_GREET="Mona Lisa Octocat"
-
-   $ docker run --env-file ./.env.test actions/container-action
-   ::notice file=entrypoint.sh,line=7::Hello, Mona Lisa Octocat!
-   ```
-
-## Update the Action Metadata
-
-The [`action.yml`](action.yml) file defines metadata about your action, such as
-input(s) and output(s). For details about this file, see
-[Metadata syntax for GitHub Actions](https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions).
-
-When you copy this repository, update `action.yml` with the name, description,
-inputs, and outputs for your action.
-
-## Update the Action Code
-
-In this template, the container action runs a shell script,
-[`entrypoint.sh`](./entrypoint.sh), when the container is launched. Since you
-can choose any base Docker image and language you like, you can change this to
-suite your needs. There are a few main things to remember when writing code for
-container actions:
-
-- Inputs are accessed using argument identifiers or environment variables
-  (depending on what you set in your `action.yml`). For example, the first input
-  to this action, `who-to-greet`, can be accessed in the entrypoint script using
-  the `$INPUT_WHO_TO_GREET` environment variable.
-
-  ```bash
-  GREETING="Hello, $INPUT_WHO_TO_GREET!"
-  ```
-
-- GitHub Actions supports a number of different workflow commands such as
-  creating outputs, setting environment variables, and more. These are
-  accomplished by writing to different `GITHUB_*` environment variables. For
-  more information, see
-  [Workflow commands](https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions).
-
-  | Scenario              | Example                                         |
-  | --------------------- | ----------------------------------------------- |
-  | Set environment vars  | `echo "MY_VAR=my-value" >> "$GITHUB_ENV"`       |
-  | Set outputs           | `echo "greeting=$GREETING" >> "$GITHUB_OUTPUT"` |
-  | Prepend to `PATH`     | `echo "$HOME/.local/bin" >> "$GITHUB_PATH"`     |
-  | Set `pre`/`post` vars | `echo "MY_VAR=my-value" >> "$GITHUB_STATE"`     |
-  | Set step summary      | `echo "{markdown}" >> "$GITHUB_STEP_SUMMARY"`   |
-
-  You can write multiline strings using the following syntax:
-
-  ```bash
-  {
-    echo "JSON_RESPONSE<<EOF"
-    curl https://example.com
-    echo "EOF"
-  } >> "$GITHUB_ENV"
-  ```
-
-- Make sure that the script being run is executable!
-
-  ```bash
-  git add entrypoint.sh
-  git update-index --chmod=+x entrypoint.sh
-  ```
-
-So, what are you waiting for? Go ahead and start customizing your action!
-
-1. Create a new branch
-
-   ```bash
-   git checkout -b releases/v1
-   ```
-
-1. Replace the contents of `entrypoint.sh` with your action code
-1. Build and test the container
-
-   ```bash
-   docker build -t actions/container-action .
-   docker run actions/container-action "Mona Lisa Octocat"
-   ```
-
-1. Commit your changes
-
-   ```bash
-   git add .
-   git commit -m "My first action is ready!"
-   ```
-
-1. Push them to your repository
-
-   ```bash
-   git push -u origin releases/v1
-   ```
-
-1. Create a pull request and get feedback on your action
-1. Merge the pull request into the `main` branch
-
-Your action is now published! :rocket:
-
-For information about versioning your action, see
-[Versioning](https://github.com/actions/toolkit/blob/main/docs/action-versioning.md)
-in the GitHub Actions toolkit.
-
-## Validate the Action
-
-You can now validate the action by referencing it in a workflow file. For
-example, [`ci.yml`](./.github/workflows/ci.yml) demonstrates how to reference an
-action in the same repository.
-
-```yaml
-steps:
-  - name: Checkout
-    id: checkout
-    uses: actions/checkout@v4
-
-  - name: Test Local Action
-    id: test-action
-    uses: ./
-    with:
-      who-to-greet: Mona Lisa Octocat
-
-  - name: Print Output
-    id: output
-    run: echo "${{ steps.test-action.outputs.greeting }}"
-```
-
-For example workflow runs, check out the
-[Actions tab](https://github.com/actions/container-action/actions)! :rocket:
+- Parses git history using Conventional Commits format
+- Groups changes by type (Features, Bug Fixes, etc.)
+- Highlights BREAKING CHANGES
+- Generates markdown with commit links
+- Supports unreleased changes section
+- Configurable tag patterns, date formats, and excluded types
+- Dry-run mode for previewing output
+- Auto-detects repository URL for commit links
 
 ## Usage
 
-After testing, you can create version tag(s) that developers can use to
-reference different stable versions of your action. For more information, see
-[Versioning](https://github.com/actions/toolkit/blob/main/docs/action-versioning.md)
-in the GitHub Actions toolkit.
-
-To include the action in a workflow in another repository, you can use the
-`uses` syntax with the `@` symbol to reference a specific branch, tag, or commit
-hash.
+### Basic
 
 ```yaml
 steps:
   - name: Checkout
-    id: checkout
-    uses: actions/checkout@v4
-
-  - name: Test Local Action
-    id: test-action
-    uses: actions/container-action@v1 # Commit with the `v1` tag
+    uses: actions/checkout@v6
     with:
-      who-to-greet: Mona Lisa Octocat
+      fetch-depth: 0
 
-  - name: Print Output
-    id: output
-    run: echo "${{ steps.test-action.outputs.greeting }}"
+  - name: Generate Changelog
+    uses: somaz94/go-changelog-action@v1
+    with:
+      output_file: CHANGELOG.md
 ```
+
+### With Custom Options
+
+```yaml
+steps:
+  - name: Checkout
+    uses: actions/checkout@v6
+    with:
+      fetch-depth: 0
+
+  - name: Generate Changelog
+    id: changelog
+    uses: somaz94/go-changelog-action@v1
+    with:
+      output_file: CHANGELOG.md
+      tag_pattern: 'v[0-9]*.[0-9]*.[0-9]*'
+      exclude_types: 'chore,style'
+      include_breaking: true
+      date_format: '2006-01-02'
+      unreleased: true
+      skip_commits: '^Merge'
+
+  - name: Commit Changelog
+    uses: somaz94/go-git-commit-action@v1
+    with:
+      branch: main
+      commit_message: 'docs: update changelog'
+      user_email: 'actions@github.com'
+      user_name: 'GitHub Actions'
+      file_pattern: 'CHANGELOG.md'
+      github_token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Dry Run (Preview Only)
+
+```yaml
+- name: Preview Changelog
+  uses: somaz94/go-changelog-action@v1
+  with:
+    dry_run: true
+```
+
+## Inputs
+
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `output_file` | Output file path for the changelog | No | `CHANGELOG.md` |
+| `tag_pattern` | Glob pattern to match version tags | No | `v[0-9]*.[0-9]*.[0-9]*` |
+| `exclude_types` | Comma-separated commit types to exclude | No | `` |
+| `include_breaking` | Include BREAKING CHANGE section | No | `true` |
+| `date_format` | Date format (Go time format) | No | `2006-01-02` |
+| `header` | Custom header for changelog | No | `# Changelog` |
+| `unreleased` | Include unreleased changes section | No | `true` |
+| `unreleased_title` | Title for unreleased section | No | `Unreleased` |
+| `skip_commits` | Regex pattern to skip commits | No | `^Merge` |
+| `repository_url` | Repository URL for links (auto-detected) | No | `` |
+| `dry_run` | Preview without writing to file | No | `false` |
+
+## Outputs
+
+| Output | Description |
+|--------|-------------|
+| `changelog_file` | Path to the generated changelog file |
+| `changelog_content` | Generated changelog content |
+| `entries_count` | Number of changelog entries generated |
+| `latest_version` | Latest version tag found |
+
+## Conventional Commits
+
+This action parses commits following the
+[Conventional Commits](https://www.conventionalcommits.org/) specification:
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+### Supported Types
+
+| Type | Section |
+|------|---------|
+| `feat` | Features |
+| `fix` | Bug Fixes |
+| `docs` | Documentation |
+| `style` | Styles |
+| `refactor` | Code Refactoring |
+| `perf` | Performance Improvements |
+| `test` | Tests |
+| `build` | Builds |
+| `ci` | Continuous Integration |
+| `chore` | Chores |
+| `revert` | Reverts |
+
+### Breaking Changes
+
+Breaking changes are detected via:
+- `!` after the type/scope: `feat!: remove deprecated API`
+- `BREAKING CHANGE` in the commit body
+
+## Project Structure
+
+```
+.
+├── cmd/
+│   └── main.go              # Entry point
+├── internal/
+│   ├── changelog/
+│   │   ├── generator.go     # Changelog generation logic
+│   │   ├── generator_test.go
+│   │   ├── parser.go        # Conventional commit parser
+│   │   └── parser_test.go
+│   ├── config/
+│   │   ├── config.go        # Configuration from env vars
+│   │   └── config_test.go
+│   ├── git/
+│   │   ├── git.go           # Git operations
+│   │   └── git_test.go
+│   └── output/
+│       ├── output.go        # GitHub Actions output helpers
+│       └── output_test.go
+├── action.yml
+├── Dockerfile
+├── Makefile
+└── go.mod
+```
+
+## Development
+
+### Prerequisites
+
+- Go 1.23+
+- Docker (for container builds)
+
+### Build
+
+```bash
+make build
+```
+
+### Test
+
+```bash
+make test
+```
+
+### Coverage
+
+```bash
+make cover
+```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
+for details.

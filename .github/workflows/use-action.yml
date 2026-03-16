@@ -107,3 +107,58 @@ jobs:
             head -5 CHANGELOG-CUSTOM.md
             exit 1
           fi
+
+  smoke-test-advanced-options:
+    name: Smoke Test (Advanced Options)
+    runs-on: ubuntu-latest
+    needs: [smoke-test-custom-options]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Generate with custom_type_mapping and include_non_conventional
+        id: changelog-advanced
+        uses: somaz94/go-changelog-action@v1
+        with:
+          output_file: CHANGELOG-ADVANCED.md
+          include_non_conventional: true
+          custom_type_mapping: '{"feat": "New Features", "fix": "Bugfixes"}'
+
+      - name: Verify Advanced Output
+        run: |
+          if [ ! -f "CHANGELOG-ADVANCED.md" ]; then
+            echo "FAIL: CHANGELOG-ADVANCED.md not found"
+            exit 1
+          fi
+          echo "PASS: advanced options completed"
+          head -30 CHANGELOG-ADVANCED.md
+
+  smoke-test-tag-range:
+    name: Smoke Test (Tag Range)
+    runs-on: ubuntu-latest
+    needs: [smoke-test-custom-options]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Generate with since_tag and repository_url
+        id: changelog-range
+        uses: somaz94/go-changelog-action@v1
+        with:
+          output_file: CHANGELOG-RANGE.md
+          since_tag: 'v1.0.0'
+          repository_url: 'https://github.com/somaz94/go-changelog-action'
+          dry_run: true
+
+      - name: Verify Tag Range Output
+        run: |
+          cat <<'EOF'
+          changelog_file=${{ steps.changelog-range.outputs.changelog_file }}
+          entries_count=${{ steps.changelog-range.outputs.entries_count }}
+          latest_version=${{ steps.changelog-range.outputs.latest_version }}
+          EOF
+          echo "PASS: tag range test completed"

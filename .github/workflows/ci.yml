@@ -26,11 +26,21 @@ jobs:
         with:
           go-version: '1.26'
 
-      - name: Run Go unit tests with coverage
-        run: go test ./internal/... -v -cover -coverprofile=coverage.out
+      - name: Run Go tests with coverage
+        run: go test ./... -v -cover -coverprofile=coverage.out
 
       - name: Display coverage summary
         run: go tool cover -func=coverage.out
+
+      - name: Check coverage threshold
+        run: |
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | tr -d '%')
+          echo "Total coverage: ${COVERAGE}%"
+          if (( $(echo "$COVERAGE < 90" | bc -l) )); then
+            echo "FAIL: Coverage ${COVERAGE}% is below 90%"
+            exit 1
+          fi
+          echo "PASS: Coverage ${COVERAGE}% meets threshold"
 
   build-and-push-docker:
     name: Build and Push Docker
@@ -94,9 +104,16 @@ jobs:
 
       - name: Verify Output
         run: |
-          echo "changelog_file=${{ steps.test-action.outputs.changelog_file }}"
-          echo "entries_count=${{ steps.test-action.outputs.entries_count }}"
-          echo "latest_version=${{ steps.test-action.outputs.latest_version }}"
+          cat <<'EOF'
+          changelog_file=${{ steps.test-action.outputs.changelog_file }}
+          entries_count=${{ steps.test-action.outputs.entries_count }}
+          latest_version=${{ steps.test-action.outputs.latest_version }}
+          EOF
+          if [ -z "${{ steps.test-action.outputs.changelog_file }}" ]; then
+            echo "FAIL: changelog_file output is empty"
+            exit 1
+          fi
+          echo "PASS: action outputs verified"
 
   ci-result:
     name: CI Result

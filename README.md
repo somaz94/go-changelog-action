@@ -287,6 +287,45 @@ make cover
 
 <br/>
 
+### Local Run
+
+You can run the changelog generator locally without GitHub Actions:
+
+```bash
+# Dry run (preview only, no file written)
+GITHUB_WORKSPACE="$(pwd)" \
+INPUT_DRY_RUN=true \
+INPUT_TAG_PATTERN="v[0-9]*.[0-9]*.[0-9]*" \
+INPUT_INCLUDE_BREAKING=true \
+INPUT_DATE_FORMAT="2006-01-02" \
+INPUT_HEADER="# Changelog" \
+INPUT_UNRELEASED=true \
+INPUT_UNRELEASED_TITLE="Unreleased" \
+INPUT_OUTPUT_FILE="CHANGELOG.md" \
+go run ./cmd/
+
+# Generate CHANGELOG.md file
+GITHUB_WORKSPACE="$(pwd)" \
+INPUT_TAG_PATTERN="v[0-9]*.[0-9]*.[0-9]*" \
+INPUT_INCLUDE_BREAKING=true \
+INPUT_DATE_FORMAT="2006-01-02" \
+INPUT_HEADER="# Changelog" \
+INPUT_UNRELEASED=true \
+INPUT_UNRELEASED_TITLE="Unreleased" \
+INPUT_OUTPUT_FILE="CHANGELOG.md" \
+go run ./cmd/
+```
+
+> **Note:** If your git remote uses a custom SSH host (e.g. `git@github.com-user:`), the repository URL may not be detected correctly. Use `INPUT_REPOSITORY_URL` to specify it explicitly:
+>
+> ```bash
+> INPUT_REPOSITORY_URL="https://github.com/owner/repo" \
+> # ... other env vars ...
+> go run ./cmd/
+> ```
+
+<br/>
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.

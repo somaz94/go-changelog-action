@@ -1,11 +1,15 @@
 # Go Changelog Action
 
 [![Continuous Integration](https://github.com/somaz94/go-changelog-action/actions/workflows/ci.yml/badge.svg)](https://github.com/somaz94/go-changelog-action/actions/workflows/ci.yml)
-[![Lint Codebase](https://github.com/somaz94/go-changelog-action/actions/workflows/linter.yml/badge.svg)](https://github.com/somaz94/go-changelog-action/actions/workflows/linter.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Latest Tag](https://img.shields.io/github/v/tag/somaz94/go-changelog-action)](https://github.com/somaz94/go-changelog-action/tags)
+[![Top Language](https://img.shields.io/github/languages/top/somaz94/go-changelog-action)](https://github.com/somaz94/go-changelog-action)
+[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-Go%20Changelog%20Action-blue?logo=github)](https://github.com/marketplace/actions/go-changelog-action)
 
 A Go-based GitHub Action that generates changelogs from
 [Conventional Commits](https://www.conventionalcommits.org/).
+
+<br/>
 
 ## Features
 
@@ -25,6 +29,8 @@ A Go-based GitHub Action that generates changelogs from
 
 ## Usage
 
+<br/>
+
 ### Basic
 
 ```yaml
@@ -39,6 +45,8 @@ steps:
     with:
       output_file: CHANGELOG.md
 ```
+
+<br/>
 
 ### With Custom Options
 
@@ -73,6 +81,8 @@ steps:
       github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+<br/>
+
 ### Tag Range (Partial Changelog)
 
 ```yaml
@@ -83,6 +93,8 @@ steps:
     until_tag: v2.0.0
 ```
 
+<br/>
+
 ### Custom Type Mapping
 
 ```yaml
@@ -92,6 +104,8 @@ steps:
     custom_type_mapping: '{"feat": "New Features", "fix": "Bugfixes", "perf": "Optimizations"}'
 ```
 
+<br/>
+
 ### Dry Run (Preview Only)
 
 ```yaml
@@ -100,6 +114,8 @@ steps:
   with:
     dry_run: true
 ```
+
+<br/>
 
 ## Inputs
 
@@ -121,6 +137,8 @@ steps:
 | `until_tag` | Generate changelog up to this tag (inclusive) | No | `` |
 | `custom_type_mapping` | JSON mapping of commit types to section names | No | `` |
 
+<br/>
+
 ## Outputs
 
 | Output | Description |
@@ -129,6 +147,8 @@ steps:
 | `changelog_content` | Generated changelog content |
 | `entries_count` | Number of changelog entries generated |
 | `latest_version` | Latest version tag found |
+
+<br/>
 
 ## Generated Changelog Format
 
@@ -151,6 +171,8 @@ steps:
 - bob
 ```
 
+<br/>
+
 ## Conventional Commits
 
 This action parses commits following the
@@ -163,6 +185,8 @@ This action parses commits following the
 
 [optional footer(s)]
 ```
+
+<br/>
 
 ### Supported Types
 
@@ -180,6 +204,8 @@ This action parses commits following the
 | `chore` | Chores |
 | `revert` | Reverts |
 
+<br/>
+
 ### Breaking Changes
 
 Breaking changes are detected via:
@@ -187,11 +213,15 @@ Breaking changes are detected via:
 - `!` after the type/scope: `feat!: remove deprecated API`
 - `BREAKING CHANGE` in the commit body
 
+<br/>
+
 ### PR and Issue Links
 
 - PR numbers are auto-detected from `(#123)` in commit messages
 - Issue references are detected from `closes #123`, `fixes #456`,
   `resolves #789` in commit messages and bodies
+
+<br/>
 
 ## Project Structure
 
@@ -220,12 +250,18 @@ Breaking changes are detected via:
 └── go.mod
 ```
 
+<br/>
+
 ## Development
+
+<br/>
 
 ### Prerequisites
 
 - Go 1.26+
 - Docker (for container builds)
+
+<br/>
 
 ### Build
 
@@ -233,17 +269,29 @@ Breaking changes are detected via:
 make build
 ```
 
+<br/>
+
 ### Test
 
 ```bash
 make test
 ```
 
+<br/>
+
 ### Coverage
 
 ```bash
 make cover
 ```
+
+<br/>
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+<br/>
 
 ## License
 

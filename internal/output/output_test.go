@@ -72,6 +72,20 @@ func TestSetOutputFallback(t *testing.T) {
 	}
 }
 
+func TestSetOutputOpenFileError(t *testing.T) {
+	// Point GITHUB_OUTPUT to a path that can't be opened
+	os.Setenv("GITHUB_OUTPUT", "/nonexistent/dir/output")
+	defer os.Unsetenv("GITHUB_OUTPUT")
+
+	err := SetOutput("key", "value")
+	if err == nil {
+		t.Fatal("expected error when GITHUB_OUTPUT path is invalid")
+	}
+	if !strings.Contains(err.Error(), "failed to open GITHUB_OUTPUT") {
+		t.Errorf("expected open error, got: %v", err)
+	}
+}
+
 func TestLogInfo(t *testing.T) {
 	// Capture stdout
 	r, w, _ := os.Pipe()

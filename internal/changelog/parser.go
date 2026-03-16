@@ -50,15 +50,11 @@ func ParseConventionalCommit(message, body, hash, author string) *ConventionalCo
 	}
 
 	// Extract PR numbers from description like (#123)
-	for _, m := range prRegex.FindAllStringSubmatch(message, -1) {
-		cc.PRNumbers = append(cc.PRNumbers, m[1])
-	}
+	cc.PRNumbers = uniqueMatches(prRegex, message)
 
 	// Extract issue references from body (closes #123, fixes #456, etc.)
 	fullText := message + "\n" + body
-	for _, m := range issueRefRegex.FindAllStringSubmatch(fullText, -1) {
-		cc.Issues = append(cc.Issues, m[1])
-	}
+	cc.Issues = uniqueMatches(issueRefRegex, fullText)
 
 	return cc
 }
@@ -73,16 +69,25 @@ func ParseNonConventionalCommit(message, body, hash, author string) *Conventiona
 		Author:      author,
 	}
 
-	for _, m := range prRegex.FindAllStringSubmatch(message, -1) {
-		cc.PRNumbers = append(cc.PRNumbers, m[1])
-	}
+	cc.PRNumbers = uniqueMatches(prRegex, message)
 
 	fullText := message + "\n" + body
-	for _, m := range issueRefRegex.FindAllStringSubmatch(fullText, -1) {
-		cc.Issues = append(cc.Issues, m[1])
-	}
+	cc.Issues = uniqueMatches(issueRefRegex, fullText)
 
 	return cc
+}
+
+// uniqueMatches extracts unique capture group 1 matches from regex, preserving order.
+func uniqueMatches(re *regexp.Regexp, text string) []string {
+	seen := make(map[string]bool)
+	var result []string
+	for _, m := range re.FindAllStringSubmatch(text, -1) {
+		if !seen[m[1]] {
+			seen[m[1]] = true
+			result = append(result, m[1])
+		}
+	}
+	return result
 }
 
 // DefaultTypeNames returns the default mapping of commit types to display names.

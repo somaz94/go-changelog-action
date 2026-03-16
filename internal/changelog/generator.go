@@ -2,6 +2,7 @@ package changelog
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"sort"
 	"strings"
@@ -66,7 +67,11 @@ func Generate(cfg GeneratorConfig) (*Result, error) {
 
 	repoURL := cfg.RepositoryURL
 	if repoURL == "" {
-		repoURL, _ = git.GetRemoteURL()
+		var err error
+		repoURL, err = git.GetRemoteURL()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "::warning::Failed to detect repository URL: %v. Commit links will be omitted.\n", err)
+		}
 	}
 
 	// Apply since/until tag filtering
@@ -100,6 +105,7 @@ func Generate(cfg GeneratorConfig) (*Result, error) {
 
 		commits, err := git.GetCommitsBetween(fromRef, tag.Name)
 		if err != nil {
+			fmt.Fprintf(os.Stderr, "::warning::Failed to get commits for %s: %v. Skipping.\n", tag.Name, err)
 			continue
 		}
 
@@ -229,7 +235,7 @@ func renderMarkdown(entries []Entry, header, dateFormat, repoURL string) string 
 	for _, entry := range entries {
 		// Version header with compare link
 		dateStr := entry.Date.Format(dateFormat)
-		isUnreleased := entry.Version == "Unreleased" || entry.PrevVersion == ""
+		isUnreleased := entry.Version == "Unreleased"
 
 		if repoURL != "" && !isUnreleased {
 			if entry.PrevVersion != "" {

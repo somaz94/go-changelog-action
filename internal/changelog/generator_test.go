@@ -251,7 +251,7 @@ func TestRenderMarkdownUnreleased(t *testing.T) {
 }
 
 func TestRenderMarkdownFirstVersionNoPrev(t *testing.T) {
-	// When PrevVersion is empty, isUnreleased is true -> plain header (no link)
+	// When PrevVersion is empty, first version should link to release tag
 	entries := []Entry{
 		{
 			Version:     "v1.0.0",
@@ -267,9 +267,9 @@ func TestRenderMarkdownFirstVersionNoPrev(t *testing.T) {
 
 	content := renderMarkdown(entries, "# Changelog", "2006-01-02", "https://github.com/owner/repo")
 
-	// No PrevVersion means isUnreleased=true, so plain header without links
-	if !strings.Contains(content, "## v1.0.0 (2024-01-01)") {
-		t.Error("expected plain version header for first version with no prev")
+	// First version with no PrevVersion should link to release tag
+	if !strings.Contains(content, "releases/tag/v1.0.0") {
+		t.Error("expected release tag link for first version")
 	}
 	if strings.Contains(content, "compare/") {
 		t.Error("first version should not have compare link")
@@ -538,6 +538,118 @@ func TestGenerateWithSinceUntil(t *testing.T) {
 	}
 	if result.LatestVersion != "v2.0.0" {
 		t.Errorf("expected latest version v2.0.0, got %s", result.LatestVersion)
+	}
+}
+
+func TestFilterTagsInvalidRange(t *testing.T) {
+	tags := []git.Tag{
+		{Name: "v3.0.0"},
+		{Name: "v2.0.0"},
+		{Name: "v1.0.0"},
+	}
+
+	// until=v1.0.0 (index 2), since=v3.0.0 (index 0+1=1) → startIdx(2) >= endIdx(1) → nil
+	result := filterTags(tags, "v3.0.0", "v1.0.0")
+	if result != nil {
+		t.Errorf("expected nil for invalid range, got %v", tagNames(result))
+	}
+}
+
+func TestGenerateWithExcludeTypes(t *testing.T) {
+	restore := mockGitRunnerFunc(func(args ...string) ([]byte, error) {
+		if len(args) > 0 && args[0] == "tag" {
+			return []byte("v1.0.0|abc1234|2024-01-01T00:00:00Z\n"), nil
+		}
+		if len(args) > 0 && args[0] == "remote" {
+			return []byte("https://github.com/owner/repo\n"), nil
+		}
+		if len(args) > 0 && args[0] == "log" {
+			return []byte("aaa111\x01feat: feature\x012024-01-15T10:00:00Z\x01alice\x01\x00bbb222\x01chore: cleanup\x012024-01-14T10:00:00Z\x01bob\x01\x00"), nil
+		}
+		return []byte(""), nil
+	})
+	defer restore()
+
+	cfg := GeneratorConfig{
+		TagPattern:      "v*",
+		ExcludeTypes:    []string{"chore"},
+		IncludeBreaking: true,
+		DateFormat:      "2006-01-02",
+		Header:          "# Changelog",
+	}
+
+	result, err := Generate(cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if strings.Contains(result.Content, "Chores") {
+		t.Error("expected chore commits to be excluded")
+	}
+}
+
+func TestGenerateRemoteURLError(t *testing.T) {
+	restore := mockGitRunnerFunc(func(args ...string) ([]byte, error) {
+		if len(args) > 0 && args[0] == "tag" {
+			return []byte("v1.0.0|abc1234|2024-01-01T00:00:00Z\n"), nil
+		}
+		if len(args) > 0 && args[0] == "remote" {
+			return nil, errors.New("no remote")
+		}
+		if len(args) > 0 && args[0] == "log" {
+			return []byte("aaa111\x01feat: feature\x012024-01-15T10:00:00Z\x01alice\x01\x00"), nil
+		}
+		return []byte(""), nil
+	})
+	defer restore()
+
+	cfg := GeneratorConfig{
+		TagPattern:      "v*",
+		IncludeBreaking: true,
+		DateFormat:      "2006-01-02",
+		Header:          "# Changelog",
+	}
+
+	result, err := Generate(cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// Should still generate content, just without links
+	if result.EntriesCount == 0 {
+		t.Error("expected entries even without remote URL")
+	}
+}
+
+func TestGenerateGetCommitsBetweenError(t *testing.T) {
+	callCount := 0
+	restore := mockGitRunnerFunc(func(args ...string) ([]byte, error) {
+		if len(args) > 0 && args[0] == "tag" {
+			return []byte("v1.0.0|abc1234|2024-01-01T00:00:00Z\n"), nil
+		}
+		if len(args) > 0 && args[0] == "remote" {
+			return []byte("https://github.com/owner/repo\n"), nil
+		}
+		if len(args) > 0 && args[0] == "log" {
+			callCount++
+			return nil, errors.New("log error")
+		}
+		return []byte(""), nil
+	})
+	defer restore()
+
+	cfg := GeneratorConfig{
+		TagPattern:      "v*",
+		IncludeBreaking: true,
+		DateFormat:      "2006-01-02",
+		Header:          "# Changelog",
+	}
+
+	result, err := Generate(cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// Should produce result with 0 entries since commits failed
+	if result.EntriesCount != 0 {
+		t.Errorf("expected 0 entries when commits fail, got %d", result.EntriesCount)
 	}
 }
 

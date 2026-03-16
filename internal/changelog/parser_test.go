@@ -239,6 +239,29 @@ func TestParseConventionalCommitWithScopeAndBreaking(t *testing.T) {
 	}
 }
 
+func TestDeduplicateIssuesAndPRs(t *testing.T) {
+	// PR mentioned twice in message
+	cc := ParseConventionalCommit("feat: add feature (#10) (#10)", "", "abc", "author")
+	if len(cc.PRNumbers) != 1 {
+		t.Errorf("expected 1 unique PR, got %d: %v", len(cc.PRNumbers), cc.PRNumbers)
+	}
+
+	// Issue mentioned multiple times in body
+	cc2 := ParseConventionalCommit("fix: bug", "Fixes #5\nAlso fixes #5\nCloses #5", "def", "author")
+	if len(cc2.Issues) != 1 {
+		t.Errorf("expected 1 unique issue, got %d: %v", len(cc2.Issues), cc2.Issues)
+	}
+
+	// Non-conventional: duplicate PR
+	cc3 := ParseNonConventionalCommit("update (#7) (#7)", "Closes #3\nCloses #3", "ghi", "author")
+	if len(cc3.PRNumbers) != 1 {
+		t.Errorf("expected 1 unique PR, got %d: %v", len(cc3.PRNumbers), cc3.PRNumbers)
+	}
+	if len(cc3.Issues) != 1 {
+		t.Errorf("expected 1 unique issue, got %d: %v", len(cc3.Issues), cc3.Issues)
+	}
+}
+
 func TestParseNonConventionalCommitNoPRsOrIssues(t *testing.T) {
 	cc := ParseNonConventionalCommit("simple update", "", "hash", "author")
 	if cc.Type != "other" {

@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"strings"
 )
@@ -54,7 +55,9 @@ func Load() *Config {
 
 	if mappingStr := os.Getenv("INPUT_CUSTOM_TYPE_MAPPING"); mappingStr != "" {
 		mapping := make(map[string]string)
-		if err := json.Unmarshal([]byte(mappingStr), &mapping); err == nil {
+		if err := json.Unmarshal([]byte(mappingStr), &mapping); err != nil {
+			fmt.Fprintf(os.Stderr, "::warning::Failed to parse custom_type_mapping JSON: %v. Using defaults.\n", err)
+		} else {
 			cfg.CustomTypeMapping = mapping
 		}
 	}

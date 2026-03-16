@@ -227,6 +227,13 @@ func TestParseTagsMalformedLine(t *testing.T) {
 	}
 }
 
+func TestParseTagsInvalidPattern(t *testing.T) {
+	_, err := parseTags("v1.0.0|abc|2024-01-01T00:00:00Z", "[invalid")
+	if err == nil {
+		t.Fatal("expected error for invalid pattern")
+	}
+}
+
 // --- Tests for cleanRemoteURL ---
 
 func TestCleanRemoteURL(t *testing.T) {

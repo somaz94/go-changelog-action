@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.0.2](https://github.com/somaz94/go-changelog-action/compare/v1.0.1...v1.0.2) (2026-03-16)
+
+### Bug Fixes
+
+- improve error handling, deduplicate issues, and raise test coverage to 95% ([4af6c43](https://github.com/somaz94/go-changelog-action/commit/4af6c43f5ed3bae9a3904c9edded563b57493be8))
+- changelog-generator.yml ([2fbc07a](https://github.com/somaz94/go-changelog-action/commit/2fbc07a20696c42d041b69c45d1717de076c5586))
+
+### Documentation
+
+- update changelog ([1bb40f4](https://github.com/somaz94/go-changelog-action/commit/1bb40f42aa1ee8ecae967b3d685d8bf23a58e9a7))
+
+### Continuous Integration
+
+- expand test coverage in CI and smoke tests ([7a5865d](https://github.com/somaz94/go-changelog-action/commit/7a5865d67111d0bd093b17f99e50b14252140532))
+- add release config and contributors workflow ([a01850b](https://github.com/somaz94/go-changelog-action/commit/a01850b60626a81d4e81f0760b85d47c439511b4))
+
+### Contributors
+
+- GitHub Actions
+- somaz
+
 ## [v1.0.1](https://github.com/somaz94/go-changelog-action/compare/v1.0.0...v1.0.1) (2026-03-16)
 
 ### Features
@@ -25,7 +46,7 @@ All notable changes to this project will be documented in this file.
 - GitHub Actions
 - somaz
 
-## v1.0.0 (2026-03-16)
+## [v1.0.0](https://github.com/somaz94/go-changelog-action/releases/tag/v1.0.0) (2026-03-16)
 
 ### Features
 
@@ -49,10 +70,6 @@ All notable changes to this project will be documented in this file.
 ### Builds
 
 - **deps:** bump the docker-minor group with 2 updates (#1) ([#1](https://github.com/somaz94/go-changelog-action/pull/1)) ([e5f5751](https://github.com/somaz94/go-changelog-action/commit/e5f57511419d540394557b045300aa3308dd425e))
-
-### Other Changes
-
-- Initial commit ([84f1d1a](https://github.com/somaz94/go-changelog-action/commit/84f1d1af919f9c967c6eb960d1cb9bf785742b78))
 
 ### Contributors
 

@@ -27,26 +27,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get tags
-        id: get_tags
-        run: |
-          latest_tag="$(git tag -l --sort=version:refname | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | tail -n1)"
-          first_tag="$(git tag -l --sort=version:refname | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | head -n1)"
-          echo "LATEST_TAG=${latest_tag}" >> "$GITHUB_ENV"
-          echo "FIRST_TAG=${first_tag}" >> "$GITHUB_ENV"
-
       - name: Generate changelog
-        if: env.FIRST_TAG != ''
-        uses: orhun/git-cliff-action@v4
+        uses: somaz94/go-changelog-action@v1
         with:
-          config: cliff.toml
-          args: --verbose
-        env:
-          OUTPUT: CHANGELOG.md
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          output_file: CHANGELOG.md
+          include_non_conventional: true
+          exclude_types: 'chore'
 
       - name: Git Commit and Push
-        if: env.FIRST_TAG != ''
         uses: somaz94/go-git-commit-action@v1
         with:
           branch: main

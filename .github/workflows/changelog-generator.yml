@@ -31,8 +31,7 @@ jobs:
         uses: somaz94/go-changelog-action@v1
         with:
           output_file: CHANGELOG.md
-          include_non_conventional: true
-          exclude_types: 'chore'
+          include_non_conventional: false
 
       - name: Git Commit and Push
         uses: somaz94/go-git-commit-action@v1

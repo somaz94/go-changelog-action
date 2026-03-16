@@ -58,15 +58,19 @@ func run(ctx context.Context) error {
 	}
 
 	genCfg := changelog.GeneratorConfig{
-		TagPattern:      cfg.TagPattern,
-		ExcludeTypes:    cfg.ExcludeTypes,
-		IncludeBreaking: cfg.IncludeBreaking,
-		DateFormat:      cfg.DateFormat,
-		Header:          cfg.Header,
-		Unreleased:      cfg.Unreleased,
-		UnreleasedTitle: cfg.UnreleasedTitle,
-		SkipCommits:     cfg.SkipCommits,
-		RepositoryURL:   cfg.RepositoryURL,
+		TagPattern:             cfg.TagPattern,
+		ExcludeTypes:           cfg.ExcludeTypes,
+		IncludeBreaking:        cfg.IncludeBreaking,
+		DateFormat:             cfg.DateFormat,
+		Header:                 cfg.Header,
+		Unreleased:             cfg.Unreleased,
+		UnreleasedTitle:        cfg.UnreleasedTitle,
+		SkipCommits:            cfg.SkipCommits,
+		RepositoryURL:          cfg.RepositoryURL,
+		IncludeNonConventional: cfg.IncludeNonConventional,
+		SinceTag:               cfg.SinceTag,
+		UntilTag:               cfg.UntilTag,
+		CustomTypeMapping:      cfg.CustomTypeMapping,
 	}
 
 	result, err := changelog.Generate(genCfg)

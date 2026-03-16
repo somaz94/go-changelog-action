@@ -6,12 +6,12 @@ import (
 )
 
 func TestLoadDefaults(t *testing.T) {
-	// Clear all relevant env vars
 	envVars := []string{
 		"INPUT_OUTPUT_FILE", "INPUT_TAG_PATTERN", "INPUT_EXCLUDE_TYPES",
 		"INPUT_INCLUDE_BREAKING", "INPUT_DATE_FORMAT", "INPUT_HEADER",
 		"INPUT_UNRELEASED", "INPUT_UNRELEASED_TITLE", "INPUT_SKIP_COMMITS",
-		"INPUT_REPOSITORY_URL", "INPUT_DRY_RUN",
+		"INPUT_REPOSITORY_URL", "INPUT_DRY_RUN", "INPUT_INCLUDE_NON_CONVENTIONAL",
+		"INPUT_SINCE_TAG", "INPUT_UNTIL_TAG", "INPUT_CUSTOM_TYPE_MAPPING",
 	}
 	for _, v := range envVars {
 		os.Unsetenv(v)
@@ -36,6 +36,18 @@ func TestLoadDefaults(t *testing.T) {
 	}
 	if len(cfg.ExcludeTypes) != 0 {
 		t.Errorf("expected empty ExcludeTypes, got %v", cfg.ExcludeTypes)
+	}
+	if cfg.IncludeNonConventional {
+		t.Error("expected IncludeNonConventional=false")
+	}
+	if cfg.SinceTag != "" {
+		t.Errorf("expected empty SinceTag, got %s", cfg.SinceTag)
+	}
+	if cfg.UntilTag != "" {
+		t.Errorf("expected empty UntilTag, got %s", cfg.UntilTag)
+	}
+	if cfg.CustomTypeMapping != nil {
+		t.Errorf("expected nil CustomTypeMapping, got %v", cfg.CustomTypeMapping)
 	}
 }
 
@@ -70,5 +82,50 @@ func TestLoadCustomValues(t *testing.T) {
 		if cfg.ExcludeTypes[i] != v {
 			t.Errorf("expected ExcludeTypes[%d]=%s, got %s", i, v, cfg.ExcludeTypes[i])
 		}
+	}
+}
+
+func TestLoadNewFeatures(t *testing.T) {
+	os.Setenv("INPUT_INCLUDE_NON_CONVENTIONAL", "true")
+	os.Setenv("INPUT_SINCE_TAG", "v1.0.0")
+	os.Setenv("INPUT_UNTIL_TAG", "v2.0.0")
+	os.Setenv("INPUT_CUSTOM_TYPE_MAPPING", `{"feat": "New Features", "fix": "Bugfixes"}`)
+	defer func() {
+		os.Unsetenv("INPUT_INCLUDE_NON_CONVENTIONAL")
+		os.Unsetenv("INPUT_SINCE_TAG")
+		os.Unsetenv("INPUT_UNTIL_TAG")
+		os.Unsetenv("INPUT_CUSTOM_TYPE_MAPPING")
+	}()
+
+	cfg := Load()
+
+	if !cfg.IncludeNonConventional {
+		t.Error("expected IncludeNonConventional=true")
+	}
+	if cfg.SinceTag != "v1.0.0" {
+		t.Errorf("expected SinceTag=v1.0.0, got %s", cfg.SinceTag)
+	}
+	if cfg.UntilTag != "v2.0.0" {
+		t.Errorf("expected UntilTag=v2.0.0, got %s", cfg.UntilTag)
+	}
+	if cfg.CustomTypeMapping == nil {
+		t.Fatal("expected non-nil CustomTypeMapping")
+	}
+	if cfg.CustomTypeMapping["feat"] != "New Features" {
+		t.Errorf("expected feat -> 'New Features', got %q", cfg.CustomTypeMapping["feat"])
+	}
+	if cfg.CustomTypeMapping["fix"] != "Bugfixes" {
+		t.Errorf("expected fix -> 'Bugfixes', got %q", cfg.CustomTypeMapping["fix"])
+	}
+}
+
+func TestLoadInvalidJSON(t *testing.T) {
+	os.Setenv("INPUT_CUSTOM_TYPE_MAPPING", "not valid json")
+	defer os.Unsetenv("INPUT_CUSTOM_TYPE_MAPPING")
+
+	cfg := Load()
+
+	if cfg.CustomTypeMapping != nil {
+		t.Errorf("expected nil CustomTypeMapping for invalid JSON, got %v", cfg.CustomTypeMapping)
 	}
 }

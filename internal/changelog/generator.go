@@ -12,29 +12,35 @@ import (
 
 // Entry represents a single version entry in the changelog.
 type Entry struct {
-	Version  string
-	Date     time.Time
-	Sections map[string][]ConventionalCommit
-	Breaking []ConventionalCommit
+	Version      string
+	PrevVersion  string
+	Date         time.Time
+	Sections     map[string][]ConventionalCommit
+	Breaking     []ConventionalCommit
+	Contributors []string
 }
 
 // GeneratorConfig holds configuration for changelog generation.
 type GeneratorConfig struct {
-	TagPattern     string
-	ExcludeTypes   []string
-	IncludeBreaking bool
-	DateFormat     string
-	Header         string
-	Unreleased     bool
-	UnreleasedTitle string
-	SkipCommits    string
-	RepositoryURL  string
+	TagPattern          string
+	ExcludeTypes        []string
+	IncludeBreaking     bool
+	DateFormat          string
+	Header              string
+	Unreleased          bool
+	UnreleasedTitle     string
+	SkipCommits         string
+	RepositoryURL       string
+	IncludeNonConventional bool
+	SinceTag            string
+	UntilTag            string
+	CustomTypeMapping   map[string]string
 }
 
 // Result holds the output of changelog generation.
 type Result struct {
-	Content      string
-	EntriesCount int
+	Content       string
+	EntriesCount  int
 	LatestVersion string
 }
 
@@ -63,22 +69,20 @@ func Generate(cfg GeneratorConfig) (*Result, error) {
 		repoURL, _ = git.GetRemoteURL()
 	}
 
+	// Apply since/until tag filtering
+	tags = filterTags(tags, cfg.SinceTag, cfg.UntilTag)
+
 	var entries []Entry
 
 	// Generate unreleased section
-	if cfg.Unreleased && len(tags) > 0 {
-		commits, err := git.GetCommitsSinceTag(tags[0].Name)
-		if err == nil && len(commits) > 0 {
-			entry := buildEntry(cfg.UnreleasedTitle, time.Now(), commits, skipRegex, excludeSet, cfg.IncludeBreaking)
-			if hasSections(entry) {
-				entries = append(entries, entry)
-			}
+	if cfg.Unreleased {
+		var latestTag string
+		if len(tags) > 0 {
+			latestTag = tags[0].Name
 		}
-	} else if cfg.Unreleased && len(tags) == 0 {
-		// No tags yet - all commits are unreleased
-		commits, err := git.GetCommitsSinceTag("")
+		commits, err := git.GetCommitsSinceTag(latestTag)
 		if err == nil && len(commits) > 0 {
-			entry := buildEntry(cfg.UnreleasedTitle, time.Now(), commits, skipRegex, excludeSet, cfg.IncludeBreaking)
+			entry := buildEntry(cfg.UnreleasedTitle, "", time.Now(), commits, skipRegex, excludeSet, cfg.IncludeBreaking, cfg.IncludeNonConventional, cfg.CustomTypeMapping)
 			if hasSections(entry) {
 				entries = append(entries, entry)
 			}
@@ -88,8 +92,10 @@ func Generate(cfg GeneratorConfig) (*Result, error) {
 	// Generate entries for each tag
 	for i, tag := range tags {
 		var fromRef string
+		var prevVersion string
 		if i+1 < len(tags) {
 			fromRef = tags[i+1].Name
+			prevVersion = tags[i+1].Name
 		}
 
 		commits, err := git.GetCommitsBetween(fromRef, tag.Name)
@@ -97,7 +103,7 @@ func Generate(cfg GeneratorConfig) (*Result, error) {
 			continue
 		}
 
-		entry := buildEntry(tag.Name, tag.Date, commits, skipRegex, excludeSet, cfg.IncludeBreaking)
+		entry := buildEntry(tag.Name, prevVersion, tag.Date, commits, skipRegex, excludeSet, cfg.IncludeBreaking, cfg.IncludeNonConventional, cfg.CustomTypeMapping)
 		entries = append(entries, entry)
 	}
 
@@ -115,21 +121,69 @@ func Generate(cfg GeneratorConfig) (*Result, error) {
 	}, nil
 }
 
-func buildEntry(version string, date time.Time, commits []git.Commit, skipRegex *regexp.Regexp, excludeSet map[string]bool, includeBreaking bool) Entry {
-	entry := Entry{
-		Version:  version,
-		Date:     date,
-		Sections: make(map[string][]ConventionalCommit),
+func filterTags(tags []git.Tag, sinceTag, untilTag string) []git.Tag {
+	if sinceTag == "" && untilTag == "" {
+		return tags
 	}
+
+	// Tags are sorted descending: [v3, v2, v1]
+	// until_tag: start collecting from this tag (skip newer)
+	// since_tag: stop collecting after this tag (skip older)
+	startIdx := 0
+	endIdx := len(tags)
+
+	if untilTag != "" {
+		for i, tag := range tags {
+			if tag.Name == untilTag {
+				startIdx = i
+				break
+			}
+		}
+	}
+
+	if sinceTag != "" {
+		for i, tag := range tags {
+			if tag.Name == sinceTag {
+				endIdx = i + 1
+				break
+			}
+		}
+	}
+
+	if startIdx >= endIdx {
+		return nil
+	}
+
+	return tags[startIdx:endIdx]
+}
+
+func buildEntry(version, prevVersion string, date time.Time, commits []git.Commit, skipRegex *regexp.Regexp, excludeSet map[string]bool, includeBreaking, includeNonConventional bool, customMapping map[string]string) Entry {
+	entry := Entry{
+		Version:     version,
+		PrevVersion: prevVersion,
+		Date:        date,
+		Sections:    make(map[string][]ConventionalCommit),
+	}
+
+	contributorSet := make(map[string]bool)
 
 	for _, commit := range commits {
 		if skipRegex != nil && skipRegex.MatchString(commit.Message) {
 			continue
 		}
 
+		// Track contributors
+		if commit.Author != "" {
+			contributorSet[commit.Author] = true
+		}
+
 		cc := ParseConventionalCommit(commit.Message, commit.Body, commit.Hash, commit.Author)
 		if cc == nil {
-			continue
+			if includeNonConventional {
+				cc = ParseNonConventionalCommit(commit.Message, commit.Body, commit.Hash, commit.Author)
+			} else {
+				continue
+			}
 		}
 
 		if excludeSet[cc.Type] {
@@ -140,9 +194,15 @@ func buildEntry(version string, date time.Time, commits []git.Commit, skipRegex 
 			entry.Breaking = append(entry.Breaking, *cc)
 		}
 
-		typeName := TypeDisplayName(cc.Type)
+		typeName := TypeDisplayNameWithCustom(cc.Type, customMapping)
 		entry.Sections[typeName] = append(entry.Sections[typeName], *cc)
 	}
+
+	// Sort contributors
+	for author := range contributorSet {
+		entry.Contributors = append(entry.Contributors, author)
+	}
+	sort.Strings(entry.Contributors)
 
 	return entry
 }
@@ -163,13 +223,24 @@ func renderMarkdown(entries []Entry, header, dateFormat, repoURL string) string 
 		"Features", "Bug Fixes", "Performance Improvements",
 		"Code Refactoring", "Documentation", "Tests",
 		"Builds", "Continuous Integration", "Styles", "Chores", "Reverts",
+		"Other Changes",
 	}
 
 	for _, entry := range entries {
-		// Version header
+		// Version header with compare link
 		dateStr := entry.Date.Format(dateFormat)
-		if repoURL != "" && entry.Version != "Unreleased" {
-			sb.WriteString(fmt.Sprintf("## [%s](%s/releases/tag/%s) (%s)\n\n", entry.Version, repoURL, entry.Version, dateStr))
+		isUnreleased := entry.Version == "Unreleased" || entry.PrevVersion == ""
+
+		if repoURL != "" && !isUnreleased {
+			if entry.PrevVersion != "" {
+				// Version with compare link
+				sb.WriteString(fmt.Sprintf("## [%s](%s/compare/%s...%s) (%s)\n\n",
+					entry.Version, repoURL, entry.PrevVersion, entry.Version, dateStr))
+			} else {
+				// First version - link to release tag
+				sb.WriteString(fmt.Sprintf("## [%s](%s/releases/tag/%s) (%s)\n\n",
+					entry.Version, repoURL, entry.Version, dateStr))
+			}
 		} else {
 			sb.WriteString(fmt.Sprintf("## %s (%s)\n\n", entry.Version, dateStr))
 		}
@@ -183,7 +254,7 @@ func renderMarkdown(entries []Entry, header, dateFormat, repoURL string) string 
 			sb.WriteString("\n")
 		}
 
-		// Regular sections
+		// Regular sections in defined order
 		rendered := make(map[string]bool)
 		for _, sectionName := range sectionOrder {
 			commits, ok := entry.Sections[sectionName]
@@ -214,6 +285,15 @@ func renderMarkdown(entries []Entry, header, dateFormat, repoURL string) string 
 			}
 			sb.WriteString("\n")
 		}
+
+		// Contributors
+		if len(entry.Contributors) > 0 {
+			sb.WriteString("### Contributors\n\n")
+			for _, author := range entry.Contributors {
+				sb.WriteString(fmt.Sprintf("- %s\n", author))
+			}
+			sb.WriteString("\n")
+		}
 	}
 
 	return sb.String()
@@ -225,17 +305,40 @@ func renderCommitLine(sb *strings.Builder, cc ConventionalCommit, repoURL string
 		shortHash = shortHash[:7]
 	}
 
+	var line strings.Builder
+
+	// Build description with scope
 	if cc.Scope != "" {
-		if repoURL != "" {
-			sb.WriteString(fmt.Sprintf("- **%s:** %s ([%s](%s/commit/%s))\n", cc.Scope, cc.Description, shortHash, repoURL, cc.Hash))
-		} else {
-			sb.WriteString(fmt.Sprintf("- **%s:** %s (%s)\n", cc.Scope, cc.Description, shortHash))
-		}
+		line.WriteString(fmt.Sprintf("- **%s:** %s", cc.Scope, cc.Description))
 	} else {
-		if repoURL != "" {
-			sb.WriteString(fmt.Sprintf("- %s ([%s](%s/commit/%s))\n", cc.Description, shortHash, repoURL, cc.Hash))
-		} else {
-			sb.WriteString(fmt.Sprintf("- %s (%s)\n", cc.Description, shortHash))
-		}
+		line.WriteString(fmt.Sprintf("- %s", cc.Description))
 	}
+
+	// Append PR links
+	if repoURL != "" && len(cc.PRNumbers) > 0 {
+		var prLinks []string
+		for _, pr := range cc.PRNumbers {
+			prLinks = append(prLinks, fmt.Sprintf("[#%s](%s/pull/%s)", pr, repoURL, pr))
+		}
+		line.WriteString(fmt.Sprintf(" (%s)", strings.Join(prLinks, ", ")))
+	}
+
+	// Append issue links
+	if repoURL != "" && len(cc.Issues) > 0 {
+		var issueLinks []string
+		for _, issue := range cc.Issues {
+			issueLinks = append(issueLinks, fmt.Sprintf("[#%s](%s/issues/%s)", issue, repoURL, issue))
+		}
+		line.WriteString(fmt.Sprintf(", closes %s", strings.Join(issueLinks, ", ")))
+	}
+
+	// Append commit hash link
+	if repoURL != "" {
+		line.WriteString(fmt.Sprintf(" ([%s](%s/commit/%s))", shortHash, repoURL, cc.Hash))
+	} else {
+		line.WriteString(fmt.Sprintf(" (%s)", shortHash))
+	}
+
+	line.WriteString("\n")
+	sb.WriteString(line.String())
 }

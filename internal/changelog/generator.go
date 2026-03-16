@@ -306,14 +306,14 @@ func renderSections(sb *strings.Builder, entry Entry, repoURL string) {
 }
 
 func renderContributors(sb *strings.Builder, entry Entry) {
-	if len(entry.Contributors) == 0 {
-		return
+	if len(entry.Contributors) > 0 {
+		sb.WriteString("### Contributors\n\n")
+		for _, author := range entry.Contributors {
+			sb.WriteString(fmt.Sprintf("- %s\n", author))
+		}
+		sb.WriteString("\n")
 	}
-	sb.WriteString("### Contributors\n\n")
-	for _, author := range entry.Contributors {
-		sb.WriteString(fmt.Sprintf("- %s\n", author))
-	}
-	sb.WriteString("\n")
+	sb.WriteString("<br/>\n\n")
 }
 
 func renderCommitLine(sb *strings.Builder, cc ConventionalCommit, repoURL string) {

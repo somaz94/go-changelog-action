@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.0.3](https://github.com/somaz94/go-changelog-action/compare/v1.0.2...v1.0.3) (2026-03-16)
+
+### Code Refactoring
+
+- improve code quality and consistency ([2015dab](https://github.com/somaz94/go-changelog-action/commit/2015dab65335a4095752334766b83489e0fe2afa))
+
+### Documentation
+
+- update CONTRIBUTORS.md ([195ec57](https://github.com/somaz94/go-changelog-action/commit/195ec57262acaf82ace6778493f91023e2f06474))
+- update changelog ([41585be](https://github.com/somaz94/go-changelog-action/commit/41585be59d2e56518497faf423186441228cd6c6))
+
+### Continuous Integration
+
+- use major-tag-action for version tag updates ([69f4ffa](https://github.com/somaz94/go-changelog-action/commit/69f4ffae0f378a2aacb8d9e0184029f3555f8306))
+
+### Contributors
+
+- GitHub Actions
+- somaz
+
 ## [v1.0.2](https://github.com/somaz94/go-changelog-action/compare/v1.0.1...v1.0.2) (2026-03-16)
 
 ### Bug Fixes

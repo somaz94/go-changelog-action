@@ -61,3 +61,71 @@ func TestSetOutputMultiline(t *testing.T) {
 		t.Errorf("expected multiline content, got: %s", content)
 	}
 }
+
+func TestSetOutputFallback(t *testing.T) {
+	os.Unsetenv("GITHUB_OUTPUT")
+
+	// Should not error when GITHUB_OUTPUT is not set (fallback mode)
+	err := SetOutput("key", "value")
+	if err != nil {
+		t.Fatalf("unexpected error in fallback mode: %v", err)
+	}
+}
+
+func TestLogInfo(t *testing.T) {
+	// Capture stdout
+	r, w, _ := os.Pipe()
+	oldStdout := os.Stdout
+	os.Stdout = w
+
+	LogInfo("test message")
+
+	w.Close()
+	os.Stdout = oldStdout
+
+	buf := make([]byte, 256)
+	n, _ := r.Read(buf)
+	output := string(buf[:n])
+
+	if !strings.Contains(output, "::notice::test message") {
+		t.Errorf("expected '::notice::test message', got %q", output)
+	}
+}
+
+func TestLogWarning(t *testing.T) {
+	r, w, _ := os.Pipe()
+	oldStdout := os.Stdout
+	os.Stdout = w
+
+	LogWarning("warn msg")
+
+	w.Close()
+	os.Stdout = oldStdout
+
+	buf := make([]byte, 256)
+	n, _ := r.Read(buf)
+	output := string(buf[:n])
+
+	if !strings.Contains(output, "::warning::warn msg") {
+		t.Errorf("expected '::warning::warn msg', got %q", output)
+	}
+}
+
+func TestLogError(t *testing.T) {
+	r, w, _ := os.Pipe()
+	oldStdout := os.Stdout
+	os.Stdout = w
+
+	LogError("error msg")
+
+	w.Close()
+	os.Stdout = oldStdout
+
+	buf := make([]byte, 256)
+	n, _ := r.Read(buf)
+	output := string(buf[:n])
+
+	if !strings.Contains(output, "::error::error msg") {
+		t.Errorf("expected '::error::error msg', got %q", output)
+	}
+}

@@ -1,6 +1,7 @@
 package changelog
 
 import (
+	"errors"
 	"regexp"
 	"strings"
 	"testing"
@@ -8,6 +9,21 @@ import (
 
 	"github.com/somaz94/go-changelog-action/internal/git"
 )
+
+func mockGitRunner(output []byte, err error) func() {
+	original := git.RunCommand
+	git.RunCommand = func(args ...string) ([]byte, error) {
+		return output, err
+	}
+	return func() { git.RunCommand = original }
+}
+
+// mockGitRunnerFunc allows different responses based on command args.
+func mockGitRunnerFunc(fn func(args ...string) ([]byte, error)) func() {
+	original := git.RunCommand
+	git.RunCommand = fn
+	return func() { git.RunCommand = original }
+}
 
 func TestBuildEntry(t *testing.T) {
 	commits := []git.Commit{
@@ -179,6 +195,349 @@ func TestFilterTags(t *testing.T) {
 	result = filterTags(tags, "v2.0.0", "v2.0.0")
 	if len(result) != 1 || result[0].Name != "v2.0.0" {
 		t.Errorf("expected only v2.0.0, got %v", tagNames(result))
+	}
+}
+
+func TestHasSections(t *testing.T) {
+	// Empty entry
+	empty := Entry{Sections: make(map[string][]ConventionalCommit)}
+	if hasSections(empty) {
+		t.Error("expected hasSections=false for empty entry")
+	}
+
+	// Entry with sections
+	withSections := Entry{
+		Sections: map[string][]ConventionalCommit{
+			"Features": {{Type: "feat", Description: "test"}},
+		},
+	}
+	if !hasSections(withSections) {
+		t.Error("expected hasSections=true for entry with sections")
+	}
+
+	// Entry with only breaking changes
+	withBreaking := Entry{
+		Sections: make(map[string][]ConventionalCommit),
+		Breaking: []ConventionalCommit{{Type: "feat", Description: "break", Breaking: true}},
+	}
+	if !hasSections(withBreaking) {
+		t.Error("expected hasSections=true for entry with breaking changes")
+	}
+}
+
+func TestRenderMarkdownUnreleased(t *testing.T) {
+	entries := []Entry{
+		{
+			Version:     "Unreleased",
+			PrevVersion: "",
+			Date:        time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC),
+			Sections: map[string][]ConventionalCommit{
+				"Features": {
+					{Type: "feat", Description: "new thing", Hash: "abc1234567890", Author: "test"},
+				},
+			},
+		},
+	}
+
+	content := renderMarkdown(entries, "# Changelog", "2006-01-02", "https://github.com/owner/repo")
+
+	// Unreleased should not have a compare link
+	if strings.Contains(content, "compare/") {
+		t.Error("unreleased should not have compare link")
+	}
+	if !strings.Contains(content, "## Unreleased") {
+		t.Error("expected Unreleased header")
+	}
+}
+
+func TestRenderMarkdownFirstVersionNoPrev(t *testing.T) {
+	// When PrevVersion is empty, isUnreleased is true -> plain header (no link)
+	entries := []Entry{
+		{
+			Version:     "v1.0.0",
+			PrevVersion: "",
+			Date:        time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			Sections: map[string][]ConventionalCommit{
+				"Features": {
+					{Type: "feat", Description: "initial", Hash: "abc1234567890", Author: "test"},
+				},
+			},
+		},
+	}
+
+	content := renderMarkdown(entries, "# Changelog", "2006-01-02", "https://github.com/owner/repo")
+
+	// No PrevVersion means isUnreleased=true, so plain header without links
+	if !strings.Contains(content, "## v1.0.0 (2024-01-01)") {
+		t.Error("expected plain version header for first version with no prev")
+	}
+	if strings.Contains(content, "compare/") {
+		t.Error("first version should not have compare link")
+	}
+}
+
+func TestRenderMarkdownBreakingChanges(t *testing.T) {
+	entries := []Entry{
+		{
+			Version:     "v2.0.0",
+			PrevVersion: "v1.0.0",
+			Date:        time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC),
+			Sections: map[string][]ConventionalCommit{
+				"Features": {
+					{Type: "feat", Description: "breaking thing", Hash: "abc1234567890", Author: "test", Breaking: true},
+				},
+			},
+			Breaking: []ConventionalCommit{
+				{Type: "feat", Description: "breaking thing", Hash: "abc1234567890", Author: "test", Breaking: true},
+			},
+		},
+	}
+
+	content := renderMarkdown(entries, "# Changelog", "2006-01-02", "https://github.com/owner/repo")
+
+	if !strings.Contains(content, "### BREAKING CHANGES") {
+		t.Error("expected BREAKING CHANGES section")
+	}
+}
+
+func TestRenderMarkdownCustomSections(t *testing.T) {
+	entries := []Entry{
+		{
+			Version:     "v1.0.0",
+			PrevVersion: "v0.9.0",
+			Date:        time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			Sections: map[string][]ConventionalCommit{
+				"Features": {
+					{Type: "feat", Description: "feature", Hash: "abc1234567890", Author: "test"},
+				},
+				"Custom Section": {
+					{Type: "custom", Description: "custom thing", Hash: "def1234567890", Author: "test"},
+				},
+			},
+		},
+	}
+
+	content := renderMarkdown(entries, "# Changelog", "2006-01-02", "https://github.com/owner/repo")
+
+	if !strings.Contains(content, "### Custom Section") {
+		t.Error("expected Custom Section")
+	}
+}
+
+func TestRenderMarkdownNoRepoURL(t *testing.T) {
+	entries := []Entry{
+		{
+			Version:     "v1.0.0",
+			PrevVersion: "v0.9.0",
+			Date:        time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			Sections: map[string][]ConventionalCommit{
+				"Features": {
+					{Type: "feat", Description: "feature", Hash: "abc1234567890", Author: "test",
+						PRNumbers: []string{"42"}, Issues: []string{"99"}},
+				},
+			},
+		},
+	}
+
+	content := renderMarkdown(entries, "# Changelog", "2006-01-02", "")
+
+	// Without repo URL, should just show hash without link
+	if strings.Contains(content, "github.com") {
+		t.Error("should not contain github links without repo URL")
+	}
+	if !strings.Contains(content, "(abc1234)") {
+		t.Error("expected short hash without link")
+	}
+}
+
+func TestRenderCommitLineWithScope(t *testing.T) {
+	var sb strings.Builder
+	cc := ConventionalCommit{
+		Type:        "fix",
+		Scope:       "core",
+		Description: "fix issue",
+		Hash:        "abc1234567890",
+		Author:      "test",
+	}
+	renderCommitLine(&sb, cc, "https://github.com/owner/repo")
+	output := sb.String()
+	if !strings.Contains(output, "**core:**") {
+		t.Errorf("expected scope in output, got %q", output)
+	}
+}
+
+func TestRenderCommitLineShortHash(t *testing.T) {
+	var sb strings.Builder
+	// Hash shorter than 7 chars
+	cc := ConventionalCommit{
+		Type:        "fix",
+		Description: "fix",
+		Hash:        "abc",
+		Author:      "test",
+	}
+	renderCommitLine(&sb, cc, "")
+	output := sb.String()
+	if !strings.Contains(output, "(abc)") {
+		t.Errorf("expected short hash abc, got %q", output)
+	}
+}
+
+func TestBuildEntryBreakingDisabled(t *testing.T) {
+	commits := []git.Commit{
+		{Hash: "abc1234567890", Message: "feat!: breaking change", Date: time.Now(), Author: "test"},
+	}
+
+	entry := buildEntry("v2.0.0", "v1.0.0", time.Now(), commits, nil, nil, false, false, nil)
+
+	if len(entry.Breaking) != 0 {
+		t.Errorf("expected 0 breaking changes when disabled, got %d", len(entry.Breaking))
+	}
+}
+
+func TestGenerate(t *testing.T) {
+	callCount := 0
+	restore := mockGitRunnerFunc(func(args ...string) ([]byte, error) {
+		callCount++
+		if len(args) > 0 && args[0] == "tag" {
+			// Return two tags
+			return []byte("v2.0.0|abc1234|2024-02-01T00:00:00Z\nv1.0.0|def5678|2024-01-01T00:00:00Z\n"), nil
+		}
+		if len(args) > 0 && args[0] == "remote" {
+			return []byte("https://github.com/owner/repo.git\n"), nil
+		}
+		if len(args) > 0 && args[0] == "log" {
+			// Return a commit
+			return []byte("aaa111|feat: new feature|\n|2024-01-15T10:00:00Z|alice"), nil
+		}
+		return []byte(""), nil
+	})
+	defer restore()
+
+	cfg := GeneratorConfig{
+		TagPattern:      "v[0-9]*.[0-9]*.[0-9]*",
+		IncludeBreaking: true,
+		DateFormat:      "2006-01-02",
+		Header:          "# Changelog",
+		Unreleased:      true,
+		UnreleasedTitle: "Unreleased",
+	}
+
+	result, err := Generate(cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.EntriesCount == 0 {
+		t.Error("expected at least 1 entry")
+	}
+	if result.LatestVersion != "v2.0.0" {
+		t.Errorf("expected latest version v2.0.0, got %s", result.LatestVersion)
+	}
+	if !strings.Contains(result.Content, "# Changelog") {
+		t.Error("expected header in content")
+	}
+}
+
+func TestGenerateNoTags(t *testing.T) {
+	restore := mockGitRunnerFunc(func(args ...string) ([]byte, error) {
+		if len(args) > 0 && args[0] == "tag" {
+			return []byte(""), nil
+		}
+		if len(args) > 0 && args[0] == "remote" {
+			return []byte("https://github.com/owner/repo\n"), nil
+		}
+		if len(args) > 0 && args[0] == "log" {
+			return []byte("aaa111|feat: initial|\n|2024-01-15T10:00:00Z|alice"), nil
+		}
+		return []byte(""), nil
+	})
+	defer restore()
+
+	cfg := GeneratorConfig{
+		TagPattern:      "v*",
+		IncludeBreaking: true,
+		DateFormat:      "2006-01-02",
+		Header:          "# Changelog",
+		Unreleased:      true,
+		UnreleasedTitle: "Unreleased",
+	}
+
+	result, err := Generate(cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.LatestVersion != "" {
+		t.Errorf("expected empty latest version, got %s", result.LatestVersion)
+	}
+}
+
+func TestGenerateError(t *testing.T) {
+	restore := mockGitRunner(nil, errors.New("git error"))
+	defer restore()
+
+	cfg := GeneratorConfig{
+		TagPattern: "v*",
+		DateFormat: "2006-01-02",
+		Header:     "# Changelog",
+	}
+
+	_, err := Generate(cfg)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestGenerateInvalidSkipPattern(t *testing.T) {
+	restore := mockGitRunnerFunc(func(args ...string) ([]byte, error) {
+		if len(args) > 0 && args[0] == "tag" {
+			return []byte(""), nil
+		}
+		return []byte(""), nil
+	})
+	defer restore()
+
+	cfg := GeneratorConfig{
+		TagPattern:  "v*",
+		DateFormat:  "2006-01-02",
+		Header:      "# Changelog",
+		SkipCommits: "[invalid",
+	}
+
+	_, err := Generate(cfg)
+	if err == nil {
+		t.Fatal("expected error for invalid skip_commits pattern")
+	}
+}
+
+func TestGenerateWithSinceUntil(t *testing.T) {
+	restore := mockGitRunnerFunc(func(args ...string) ([]byte, error) {
+		if len(args) > 0 && args[0] == "tag" {
+			return []byte("v3.0.0|aaa|2024-03-01T00:00:00Z\nv2.0.0|bbb|2024-02-01T00:00:00Z\nv1.0.0|ccc|2024-01-01T00:00:00Z\n"), nil
+		}
+		if len(args) > 0 && args[0] == "remote" {
+			return []byte("https://github.com/owner/repo\n"), nil
+		}
+		if len(args) > 0 && args[0] == "log" {
+			return []byte("aaa111|feat: change|\n|2024-02-15T10:00:00Z|alice"), nil
+		}
+		return []byte(""), nil
+	})
+	defer restore()
+
+	cfg := GeneratorConfig{
+		TagPattern:      "v[0-9]*.[0-9]*.[0-9]*",
+		IncludeBreaking: true,
+		DateFormat:      "2006-01-02",
+		Header:          "# Changelog",
+		SinceTag:        "v1.0.0",
+		UntilTag:        "v2.0.0",
+	}
+
+	result, err := Generate(cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.LatestVersion != "v2.0.0" {
+		t.Errorf("expected latest version v2.0.0, got %s", result.LatestVersion)
 	}
 }
 

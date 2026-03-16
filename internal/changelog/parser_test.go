@@ -185,4 +185,69 @@ func TestTypeDisplayNameWithCustom(t *testing.T) {
 	if got := TypeDisplayNameWithCustom("docs", custom); got != "Documentation" {
 		t.Errorf("expected 'Documentation', got %q", got)
 	}
+	// Unknown type gets capitalized
+	if got := TypeDisplayNameWithCustom("mytype", custom); got != "Mytype" {
+		t.Errorf("expected 'Mytype', got %q", got)
+	}
+	// Empty string
+	if got := TypeDisplayNameWithCustom("", nil); got != "" {
+		t.Errorf("expected empty string, got %q", got)
+	}
+	// Nil custom mapping with unknown type
+	if got := TypeDisplayNameWithCustom("xyz", nil); got != "Xyz" {
+		t.Errorf("expected 'Xyz', got %q", got)
+	}
+}
+
+func TestDefaultTypeNames(t *testing.T) {
+	names := DefaultTypeNames()
+	if names["feat"] != "Features" {
+		t.Errorf("expected feat -> Features, got %q", names["feat"])
+	}
+	if len(names) != 12 {
+		t.Errorf("expected 12 type mappings, got %d", len(names))
+	}
+}
+
+func TestParseConventionalCommitAllTypes(t *testing.T) {
+	types := []string{"feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore", "revert"}
+	for _, typ := range types {
+		cc := ParseConventionalCommit(typ+": some change", "", "hash", "author")
+		if cc == nil {
+			t.Errorf("expected non-nil for type %q", typ)
+			continue
+		}
+		if cc.Type != typ {
+			t.Errorf("expected type %q, got %q", typ, cc.Type)
+		}
+	}
+}
+
+func TestParseConventionalCommitWithScopeAndBreaking(t *testing.T) {
+	cc := ParseConventionalCommit("feat(api)!: remove endpoint", "", "hash", "author")
+	if cc == nil {
+		t.Fatal("expected non-nil")
+	}
+	if cc.Type != "feat" {
+		t.Errorf("expected feat, got %s", cc.Type)
+	}
+	if cc.Scope != "api" {
+		t.Errorf("expected scope api, got %s", cc.Scope)
+	}
+	if !cc.Breaking {
+		t.Error("expected breaking=true")
+	}
+}
+
+func TestParseNonConventionalCommitNoPRsOrIssues(t *testing.T) {
+	cc := ParseNonConventionalCommit("simple update", "", "hash", "author")
+	if cc.Type != "other" {
+		t.Errorf("expected other, got %s", cc.Type)
+	}
+	if len(cc.PRNumbers) != 0 {
+		t.Errorf("expected no PRs, got %v", cc.PRNumbers)
+	}
+	if len(cc.Issues) != 0 {
+		t.Errorf("expected no issues, got %v", cc.Issues)
+	}
 }

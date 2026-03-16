@@ -25,21 +25,32 @@ type Tag struct {
 	Date time.Time
 }
 
+// RunCommand executes a git command and returns its output.
+// This is a package-level variable so tests can override it.
+var RunCommand = func(args ...string) ([]byte, error) {
+	return exec.Command("git", args...).Output()
+}
+
 // GetTags returns all tags matching the given pattern, sorted by version (descending).
 func GetTags(pattern string) ([]Tag, error) {
-	out, err := exec.Command("git", "tag", "-l", "--sort=-version:refname",
-		"--format=%(refname:short)|%(objectname:short)|%(creatordate:iso8601-strict)").Output()
+	out, err := RunCommand("tag", "-l", "--sort=-version:refname",
+		"--format=%(refname:short)|%(objectname:short)|%(creatordate:iso8601-strict)")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tags: %w", err)
 	}
 
+	return parseTags(string(out), pattern)
+}
+
+// parseTags parses the raw tag output and filters by pattern.
+func parseTags(output, pattern string) ([]Tag, error) {
 	re, err := regexp.Compile(convertGlobToRegex(pattern))
 	if err != nil {
 		return nil, fmt.Errorf("invalid tag pattern %q: %w", pattern, err)
 	}
 
 	var tags []Tag
-	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
 		if line == "" {
 			continue
 		}
@@ -72,8 +83,8 @@ func GetCommitsBetween(fromRef, toRef string) ([]Commit, error) {
 		rangeArg = fromRef + ".." + toRef
 	}
 
-	out, err := exec.Command("git", "log", rangeArg,
-		"--format=%H|%s|%b%x00|%aI|%an").Output()
+	out, err := RunCommand("log", rangeArg,
+		"--format=%H|%s|%b%x00|%aI|%an")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get commits: %w", err)
 	}
@@ -91,7 +102,7 @@ func GetCommitsSinceTag(tag string) ([]Commit, error) {
 		args = []string{"log", tag + "..HEAD", "--format=%H|%s|%b%x00|%aI|%an"}
 	}
 
-	out, err := exec.Command("git", args...).Output()
+	out, err := RunCommand(args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get commits: %w", err)
 	}
@@ -101,18 +112,23 @@ func GetCommitsSinceTag(tag string) ([]Commit, error) {
 
 // GetRemoteURL returns the remote origin URL.
 func GetRemoteURL() (string, error) {
-	out, err := exec.Command("git", "remote", "get-url", "origin").Output()
+	out, err := RunCommand("remote", "get-url", "origin")
 	if err != nil {
 		return "", fmt.Errorf("failed to get remote URL: %w", err)
 	}
-	url := strings.TrimSpace(string(out))
+	return cleanRemoteURL(string(out)), nil
+}
+
+// cleanRemoteURL converts a raw remote URL to a clean HTTPS URL.
+func cleanRemoteURL(raw string) string {
+	url := strings.TrimSpace(raw)
 	// Convert SSH URL to HTTPS
 	if strings.HasPrefix(url, "git@") {
 		url = strings.Replace(url, ":", "/", 1)
 		url = strings.Replace(url, "git@", "https://", 1)
 	}
 	url = strings.TrimSuffix(url, ".git")
-	return url, nil
+	return url
 }
 
 func parseCommits(output string) ([]Commit, error) {

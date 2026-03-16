@@ -1,4 +1,4 @@
-name: Go Changelog Action
+name: Go Changelog Generator
 description: Generate changelogs from Conventional Commits using Go
 author: somaz94
 

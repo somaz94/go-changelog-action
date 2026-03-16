@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Latest Tag](https://img.shields.io/github/v/tag/somaz94/go-changelog-action)](https://github.com/somaz94/go-changelog-action/tags)
 [![Top Language](https://img.shields.io/github/languages/top/somaz94/go-changelog-action)](https://github.com/somaz94/go-changelog-action)
-[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-Go%20Changelog%20Action-blue?logo=github)](https://github.com/marketplace/actions/go-changelog-action)
+[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-Go%20Changelog%20Generator-blue?logo=github)](https://github.com/marketplace/actions/go-changelog-generator)
 
 A Go-based GitHub Action that generates changelogs from
 [Conventional Commits](https://www.conventionalcommits.org/).

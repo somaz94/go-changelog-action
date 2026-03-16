@@ -407,7 +407,7 @@ func TestGenerate(t *testing.T) {
 		}
 		if len(args) > 0 && args[0] == "log" {
 			// Return a commit
-			return []byte("aaa111|feat: new feature|\n|2024-01-15T10:00:00Z|alice"), nil
+			return []byte("aaa111\x01feat: new feature\x012024-01-15T10:00:00Z\x01alice\x01\x00"), nil
 		}
 		return []byte(""), nil
 	})
@@ -446,7 +446,7 @@ func TestGenerateNoTags(t *testing.T) {
 			return []byte("https://github.com/owner/repo\n"), nil
 		}
 		if len(args) > 0 && args[0] == "log" {
-			return []byte("aaa111|feat: initial|\n|2024-01-15T10:00:00Z|alice"), nil
+			return []byte("aaa111\x01feat: initial\x012024-01-15T10:00:00Z\x01alice\x01\x00"), nil
 		}
 		return []byte(""), nil
 	})
@@ -517,7 +517,7 @@ func TestGenerateWithSinceUntil(t *testing.T) {
 			return []byte("https://github.com/owner/repo\n"), nil
 		}
 		if len(args) > 0 && args[0] == "log" {
-			return []byte("aaa111|feat: change|\n|2024-02-15T10:00:00Z|alice"), nil
+			return []byte("aaa111\x01feat: change\x012024-02-15T10:00:00Z\x01alice\x01\x00"), nil
 		}
 		return []byte(""), nil
 	})

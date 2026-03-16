@@ -1,6 +1,6 @@
 # Binary
 go-changelog-action
-coverage.out
+*.out
 
 # Logs
 logs
@@ -25,4 +25,5 @@ Thumbs.db
 
 # IDE files
 .idea
+.vscode
 *.code-workspace

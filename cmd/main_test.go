@@ -19,7 +19,7 @@ func TestRunDryRun(t *testing.T) {
 			return []byte("https://github.com/owner/repo\n"), nil
 		}
 		if len(args) > 0 && args[0] == "log" {
-			return []byte("aaa111|feat: test feature|\n|2024-01-15T10:00:00Z|alice"), nil
+			return []byte("aaa111\x01feat: test feature\x012024-01-15T10:00:00Z\x01alice\x01\x00"), nil
 		}
 		return []byte(""), nil
 	}
@@ -50,7 +50,7 @@ func TestRunWriteFile(t *testing.T) {
 			return []byte("https://github.com/owner/repo\n"), nil
 		}
 		if len(args) > 0 && args[0] == "log" {
-			return []byte("aaa111|feat: feature|\n|2024-01-15T10:00:00Z|alice"), nil
+			return []byte("aaa111\x01feat: feature\x012024-01-15T10:00:00Z\x01alice\x01\x00"), nil
 		}
 		return []byte(""), nil
 	}

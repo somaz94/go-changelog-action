@@ -58,8 +58,9 @@ func TestConvertGlobToRegexQuestionMark(t *testing.T) {
 	}
 }
 
+// New format: hash\x01subject\x01date\x01author\x01body\x00
+
 func TestParseCommits(t *testing.T) {
-	// Test empty input
 	commits, err := parseCommits("")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -70,7 +71,7 @@ func TestParseCommits(t *testing.T) {
 }
 
 func TestParseCommitsSingleCommit(t *testing.T) {
-	input := "abc1234567890|feat: add feature|some body\n|2024-01-15T10:00:00Z|alice"
+	input := "abc1234567890\x01feat: add feature\x012024-01-15T10:00:00Z\x01alice\x01some body\x00"
 	commits, err := parseCommits(input)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -93,7 +94,8 @@ func TestParseCommitsSingleCommit(t *testing.T) {
 }
 
 func TestParseCommitsMultipleCommits(t *testing.T) {
-	input := "abc123|feat: first|\n|2024-01-15T10:00:00Z|alice\x00def456|fix: second|\n|2024-01-16T10:00:00Z|bob"
+	input := "abc123\x01feat: first\x012024-01-15T10:00:00Z\x01alice\x01\x00" +
+		"def456\x01fix: second\x012024-01-16T10:00:00Z\x01bob\x01\x00"
 	commits, err := parseCommits(input)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -110,7 +112,7 @@ func TestParseCommitsMultipleCommits(t *testing.T) {
 }
 
 func TestParseCommitsMultilineBody(t *testing.T) {
-	input := "abc123|feat: feature|body line 1\nbody line 2\n|2024-01-15T10:00:00Z|alice"
+	input := "abc123\x01feat: feature\x012024-01-15T10:00:00Z\x01alice\x01body line 1\nbody line 2\x00"
 	commits, err := parseCommits(input)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -127,7 +129,7 @@ func TestParseCommitsMultilineBody(t *testing.T) {
 }
 
 func TestParseCommitsNoBody(t *testing.T) {
-	input := "abc123|feat: no body|\n|2024-01-15T10:00:00Z|alice"
+	input := "abc123\x01feat: no body\x012024-01-15T10:00:00Z\x01alice\x01\x00"
 	commits, err := parseCommits(input)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -141,7 +143,7 @@ func TestParseCommitsNoBody(t *testing.T) {
 }
 
 func TestParseCommitsMalformedEntry(t *testing.T) {
-	input := "malformed_entry_no_pipes"
+	input := "malformed_entry_no_separators"
 	commits, err := parseCommits(input)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -152,9 +154,9 @@ func TestParseCommitsMalformedEntry(t *testing.T) {
 }
 
 func TestParseCommitsThreeCommits(t *testing.T) {
-	input := "aaa|feat: a|\n|2024-01-01T10:00:00Z|alice" +
-		"\x00bbb|fix: b|\n|2024-01-02T10:00:00Z|bob" +
-		"\x00ccc|docs: c|\n|2024-01-03T10:00:00Z|charlie"
+	input := "aaa\x01feat: a\x012024-01-01T10:00:00Z\x01alice\x01\x00" +
+		"bbb\x01fix: b\x012024-01-02T10:00:00Z\x01bob\x01\x00" +
+		"ccc\x01docs: c\x012024-01-03T10:00:00Z\x01charlie\x01\x00"
 	commits, err := parseCommits(input)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -167,6 +169,18 @@ func TestParseCommitsThreeCommits(t *testing.T) {
 	}
 	if commits[2].Author != "alice" {
 		t.Errorf("expected alice last, got %s", commits[2].Author)
+	}
+}
+
+func TestParseCommitsEmptyHash(t *testing.T) {
+	// Records with empty hash should be skipped
+	input := "\x01some subject\x012024-01-01T10:00:00Z\x01author\x01\x00"
+	commits, err := parseCommits(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(commits) != 0 {
+		t.Errorf("expected 0 commits for empty hash, got %d", len(commits))
 	}
 }
 
@@ -205,7 +219,6 @@ func TestParseTagsMalformedLine(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// First line has < 3 parts, should be skipped
 	if len(tags) != 1 {
 		t.Fatalf("expected 1 tag, got %d", len(tags))
 	}
@@ -266,7 +279,7 @@ func TestGetTagsError(t *testing.T) {
 // --- Tests for GetCommitsBetween with mock ---
 
 func TestGetCommitsBetween(t *testing.T) {
-	mockOutput := "abc123|feat: feature|\n|2024-01-15T10:00:00Z|alice"
+	mockOutput := "abc123\x01feat: feature\x012024-01-15T10:00:00Z\x01alice\x01\x00"
 	restore := mockRunner([]byte(mockOutput), nil)
 	defer restore()
 
@@ -280,7 +293,7 @@ func TestGetCommitsBetween(t *testing.T) {
 }
 
 func TestGetCommitsBetweenEmptyFrom(t *testing.T) {
-	mockOutput := "abc123|feat: initial|\n|2024-01-15T10:00:00Z|alice"
+	mockOutput := "abc123\x01feat: initial\x012024-01-15T10:00:00Z\x01alice\x01\x00"
 	restore := mockRunner([]byte(mockOutput), nil)
 	defer restore()
 
@@ -306,7 +319,7 @@ func TestGetCommitsBetweenError(t *testing.T) {
 // --- Tests for GetCommitsSinceTag with mock ---
 
 func TestGetCommitsSinceTag(t *testing.T) {
-	mockOutput := "abc123|feat: new|\n|2024-01-15T10:00:00Z|alice"
+	mockOutput := "abc123\x01feat: new\x012024-01-15T10:00:00Z\x01alice\x01\x00"
 	restore := mockRunner([]byte(mockOutput), nil)
 	defer restore()
 
@@ -320,7 +333,7 @@ func TestGetCommitsSinceTag(t *testing.T) {
 }
 
 func TestGetCommitsSinceTagEmpty(t *testing.T) {
-	mockOutput := "abc123|feat: all|\n|2024-01-15T10:00:00Z|alice"
+	mockOutput := "abc123\x01feat: all\x012024-01-15T10:00:00Z\x01alice\x01\x00"
 	restore := mockRunner([]byte(mockOutput), nil)
 	defer restore()
 

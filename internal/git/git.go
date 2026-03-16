@@ -31,6 +31,10 @@ var RunCommand = func(args ...string) ([]byte, error) {
 	return exec.Command("git", args...).Output()
 }
 
+// commitFormat uses SOH (\x01) as field separator and NUL (\x00) as record separator.
+// Fields: hash, subject, date, author, body
+const commitFormat = "%H%x01%s%x01%aI%x01%an%x01%b%x00"
+
 // GetTags returns all tags matching the given pattern, sorted by version (descending).
 func GetTags(pattern string) ([]Tag, error) {
 	out, err := RunCommand("tag", "-l", "--sort=-version:refname",
@@ -84,7 +88,7 @@ func GetCommitsBetween(fromRef, toRef string) ([]Commit, error) {
 	}
 
 	out, err := RunCommand("log", rangeArg,
-		"--format=%H|%s|%b%x00|%aI|%an")
+		"--format="+commitFormat)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get commits: %w", err)
 	}
@@ -97,9 +101,9 @@ func GetCommitsBetween(fromRef, toRef string) ([]Commit, error) {
 func GetCommitsSinceTag(tag string) ([]Commit, error) {
 	var args []string
 	if tag == "" {
-		args = []string{"log", "--format=%H|%s|%b%x00|%aI|%an"}
+		args = []string{"log", "--format=" + commitFormat}
 	} else {
-		args = []string{"log", tag + "..HEAD", "--format=%H|%s|%b%x00|%aI|%an"}
+		args = []string{"log", tag + "..HEAD", "--format=" + commitFormat}
 	}
 
 	out, err := RunCommand(args...)
@@ -133,49 +137,34 @@ func cleanRemoteURL(raw string) string {
 
 func parseCommits(output string) ([]Commit, error) {
 	var commits []Commit
-	// Split by null byte separator
-	entries := strings.Split(output, "\x00")
-	for _, entry := range entries {
-		entry = strings.TrimSpace(entry)
-		if entry == "" {
+	// Split by NUL byte (record separator)
+	records := strings.Split(output, "\x00")
+	for _, record := range records {
+		record = strings.TrimSpace(record)
+		if record == "" {
 			continue
 		}
 
-		// The entry format: body_continuation\n|date|author  OR  hash|subject|body\x00|date|author
-		// Find the last occurrence of |date|author pattern
-		lines := strings.Split(entry, "\n")
-		if len(lines) == 0 {
+		// Split by SOH byte (field separator): hash, subject, date, author, body
+		fields := strings.SplitN(record, "\x01", 5)
+		if len(fields) < 4 {
 			continue
 		}
 
-		// Last line contains |date|author
-		lastLine := lines[len(lines)-1]
-		metaParts := strings.SplitN(lastLine, "|", 3)
-		if len(metaParts) < 3 {
+		hash := fields[0]
+		subject := fields[1]
+		dateStr := fields[2]
+		author := fields[3]
+		var body string
+		if len(fields) > 4 {
+			body = strings.TrimSpace(fields[4])
+		}
+
+		if hash == "" {
 			continue
 		}
 
-		date, _ := time.Parse(time.RFC3339, metaParts[1])
-		author := metaParts[2]
-
-		// First line contains hash|subject|body_start
-		firstLine := lines[0]
-		firstParts := strings.SplitN(firstLine, "|", 3)
-		if len(firstParts) < 2 {
-			continue
-		}
-
-		hash := firstParts[0]
-		subject := firstParts[1]
-		var bodyParts []string
-		if len(firstParts) > 2 {
-			bodyParts = append(bodyParts, firstParts[2])
-		}
-		// Add middle lines to body
-		for i := 1; i < len(lines)-1; i++ {
-			bodyParts = append(bodyParts, lines[i])
-		}
-		body := strings.TrimSpace(strings.Join(bodyParts, "\n"))
+		date, _ := time.Parse(time.RFC3339, dateStr)
 
 		commits = append(commits, Commit{
 			Hash:    hash,

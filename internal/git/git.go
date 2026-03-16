@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/somaz94/go-changelog-action/internal/output"
 )
 
 // Commit represents a parsed git commit.
@@ -47,14 +49,14 @@ func GetTags(pattern string) ([]Tag, error) {
 }
 
 // parseTags parses the raw tag output and filters by pattern.
-func parseTags(output, pattern string) ([]Tag, error) {
+func parseTags(raw, pattern string) ([]Tag, error) {
 	re, err := regexp.Compile(convertGlobToRegex(pattern))
 	if err != nil {
 		return nil, fmt.Errorf("invalid tag pattern %q: %w", pattern, err)
 	}
 
 	var tags []Tag
-	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
+	for _, line := range strings.Split(strings.TrimSpace(raw), "\n") {
 		if line == "" {
 			continue
 		}
@@ -66,7 +68,10 @@ func parseTags(output, pattern string) ([]Tag, error) {
 		if !re.MatchString(name) {
 			continue
 		}
-		date, _ := time.Parse(time.RFC3339, parts[2])
+		date, err := time.Parse(time.RFC3339, parts[2])
+		if err != nil {
+			output.LogWarning(fmt.Sprintf("Failed to parse date for tag %q: %v", name, err))
+		}
 		tags = append(tags, Tag{
 			Name: name,
 			Hash: parts[1],
@@ -135,10 +140,10 @@ func cleanRemoteURL(raw string) string {
 	return url
 }
 
-func parseCommits(output string) ([]Commit, error) {
+func parseCommits(raw string) ([]Commit, error) {
 	var commits []Commit
 	// Split by NUL byte (record separator)
-	records := strings.Split(output, "\x00")
+	records := strings.Split(raw, "\x00")
 	for _, record := range records {
 		record = strings.TrimSpace(record)
 		if record == "" {
@@ -164,7 +169,10 @@ func parseCommits(output string) ([]Commit, error) {
 			continue
 		}
 
-		date, _ := time.Parse(time.RFC3339, dateStr)
+		date, err := time.Parse(time.RFC3339, dateStr)
+		if err != nil {
+			output.LogWarning(fmt.Sprintf("Failed to parse date for commit %s: %v", hash[:7], err))
+		}
 
 		commits = append(commits, Commit{
 			Hash:    hash,

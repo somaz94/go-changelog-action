@@ -2,13 +2,13 @@ package changelog
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/somaz94/go-changelog-action/internal/git"
+	"github.com/somaz94/go-changelog-action/internal/output"
 )
 
 // Entry represents a single version entry in the changelog.
@@ -70,7 +70,7 @@ func Generate(cfg GeneratorConfig) (*Result, error) {
 		var err error
 		repoURL, err = git.GetRemoteURL()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "::warning::Failed to detect repository URL: %v. Commit links will be omitted.\n", err)
+			output.LogWarning(fmt.Sprintf("Failed to detect repository URL: %v. Commit links will be omitted.", err))
 		}
 	}
 
@@ -105,7 +105,7 @@ func Generate(cfg GeneratorConfig) (*Result, error) {
 
 		commits, err := git.GetCommitsBetween(fromRef, tag.Name)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "::warning::Failed to get commits for %s: %v. Skipping.\n", tag.Name, err)
+			output.LogWarning(fmt.Sprintf("Failed to get commits for %s: %v. Skipping.", tag.Name, err))
 			continue
 		}
 
@@ -217,6 +217,14 @@ func hasSections(entry Entry) bool {
 	return len(entry.Sections) > 0 || len(entry.Breaking) > 0
 }
 
+// sectionOrder defines the display order for changelog sections.
+var sectionOrder = []string{
+	"Features", "Bug Fixes", "Performance Improvements",
+	"Code Refactoring", "Documentation", "Tests",
+	"Builds", "Continuous Integration", "Styles", "Chores", "Reverts",
+	"Other Changes",
+}
+
 func renderMarkdown(entries []Entry, header, dateFormat, repoURL string) string {
 	var sb strings.Builder
 
@@ -224,85 +232,88 @@ func renderMarkdown(entries []Entry, header, dateFormat, repoURL string) string 
 	sb.WriteString("\n\n")
 	sb.WriteString("All notable changes to this project will be documented in this file.\n\n")
 
-	// Sort section names for consistent output
-	sectionOrder := []string{
-		"Features", "Bug Fixes", "Performance Improvements",
-		"Code Refactoring", "Documentation", "Tests",
-		"Builds", "Continuous Integration", "Styles", "Chores", "Reverts",
-		"Other Changes",
-	}
-
 	for _, entry := range entries {
-		// Version header with compare link
-		dateStr := entry.Date.Format(dateFormat)
-		isUnreleased := entry.Version == "Unreleased"
-
-		if repoURL != "" && !isUnreleased {
-			if entry.PrevVersion != "" {
-				// Version with compare link
-				sb.WriteString(fmt.Sprintf("## [%s](%s/compare/%s...%s) (%s)\n\n",
-					entry.Version, repoURL, entry.PrevVersion, entry.Version, dateStr))
-			} else {
-				// First version - link to release tag
-				sb.WriteString(fmt.Sprintf("## [%s](%s/releases/tag/%s) (%s)\n\n",
-					entry.Version, repoURL, entry.Version, dateStr))
-			}
-		} else {
-			sb.WriteString(fmt.Sprintf("## %s (%s)\n\n", entry.Version, dateStr))
-		}
-
-		// Breaking changes
-		if len(entry.Breaking) > 0 {
-			sb.WriteString("### BREAKING CHANGES\n\n")
-			for _, cc := range entry.Breaking {
-				renderCommitLine(&sb, cc, repoURL)
-			}
-			sb.WriteString("\n")
-		}
-
-		// Regular sections in defined order
-		rendered := make(map[string]bool)
-		for _, sectionName := range sectionOrder {
-			commits, ok := entry.Sections[sectionName]
-			if !ok {
-				continue
-			}
-			rendered[sectionName] = true
-			sb.WriteString(fmt.Sprintf("### %s\n\n", sectionName))
-			for _, cc := range commits {
-				renderCommitLine(&sb, cc, repoURL)
-			}
-			sb.WriteString("\n")
-		}
-
-		// Remaining sections not in the predefined order
-		var remaining []string
-		for name := range entry.Sections {
-			if !rendered[name] {
-				remaining = append(remaining, name)
-			}
-		}
-		sort.Strings(remaining)
-		for _, sectionName := range remaining {
-			commits := entry.Sections[sectionName]
-			sb.WriteString(fmt.Sprintf("### %s\n\n", sectionName))
-			for _, cc := range commits {
-				renderCommitLine(&sb, cc, repoURL)
-			}
-			sb.WriteString("\n")
-		}
-
-		// Contributors
-		if len(entry.Contributors) > 0 {
-			sb.WriteString("### Contributors\n\n")
-			for _, author := range entry.Contributors {
-				sb.WriteString(fmt.Sprintf("- %s\n", author))
-			}
-			sb.WriteString("\n")
-		}
+		renderVersionHeader(&sb, entry, dateFormat, repoURL)
+		renderBreakingChanges(&sb, entry, repoURL)
+		renderSections(&sb, entry, repoURL)
+		renderContributors(&sb, entry)
 	}
 
 	return sb.String()
+}
+
+func renderVersionHeader(sb *strings.Builder, entry Entry, dateFormat, repoURL string) {
+	dateStr := entry.Date.Format(dateFormat)
+	isUnreleased := entry.Version == "Unreleased"
+
+	if repoURL != "" && !isUnreleased {
+		if entry.PrevVersion != "" {
+			sb.WriteString(fmt.Sprintf("## [%s](%s/compare/%s...%s) (%s)\n\n",
+				entry.Version, repoURL, entry.PrevVersion, entry.Version, dateStr))
+		} else {
+			sb.WriteString(fmt.Sprintf("## [%s](%s/releases/tag/%s) (%s)\n\n",
+				entry.Version, repoURL, entry.Version, dateStr))
+		}
+	} else {
+		sb.WriteString(fmt.Sprintf("## %s (%s)\n\n", entry.Version, dateStr))
+	}
+}
+
+func renderBreakingChanges(sb *strings.Builder, entry Entry, repoURL string) {
+	if len(entry.Breaking) == 0 {
+		return
+	}
+	sb.WriteString("### BREAKING CHANGES\n\n")
+	for _, cc := range entry.Breaking {
+		renderCommitLine(sb, cc, repoURL)
+	}
+	sb.WriteString("\n")
+}
+
+func renderSections(sb *strings.Builder, entry Entry, repoURL string) {
+	rendered := make(map[string]bool)
+
+	// Render sections in predefined order
+	for _, sectionName := range sectionOrder {
+		commits, ok := entry.Sections[sectionName]
+		if !ok {
+			continue
+		}
+		rendered[sectionName] = true
+		sb.WriteString(fmt.Sprintf("### %s\n\n", sectionName))
+		for _, cc := range commits {
+			renderCommitLine(sb, cc, repoURL)
+		}
+		sb.WriteString("\n")
+	}
+
+	// Render remaining sections alphabetically
+	var remaining []string
+	for name := range entry.Sections {
+		if !rendered[name] {
+			remaining = append(remaining, name)
+		}
+	}
+	sort.Strings(remaining)
+	for _, sectionName := range remaining {
+		commits := entry.Sections[sectionName]
+		sb.WriteString(fmt.Sprintf("### %s\n\n", sectionName))
+		for _, cc := range commits {
+			renderCommitLine(sb, cc, repoURL)
+		}
+		sb.WriteString("\n")
+	}
+}
+
+func renderContributors(sb *strings.Builder, entry Entry) {
+	if len(entry.Contributors) == 0 {
+		return
+	}
+	sb.WriteString("### Contributors\n\n")
+	for _, author := range entry.Contributors {
+		sb.WriteString(fmt.Sprintf("- %s\n", author))
+	}
+	sb.WriteString("\n")
 }
 
 func renderCommitLine(sb *strings.Builder, cc ConventionalCommit, repoURL string) {

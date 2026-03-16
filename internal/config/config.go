@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/somaz94/go-changelog-action/internal/output"
 )
 
 // Config holds all configuration for the changelog action.
@@ -56,7 +58,7 @@ func Load() *Config {
 	if mappingStr := os.Getenv("INPUT_CUSTOM_TYPE_MAPPING"); mappingStr != "" {
 		mapping := make(map[string]string)
 		if err := json.Unmarshal([]byte(mappingStr), &mapping); err != nil {
-			fmt.Fprintf(os.Stderr, "::warning::Failed to parse custom_type_mapping JSON: %v. Using defaults.\n", err)
+			output.LogWarning(fmt.Sprintf("Failed to parse custom_type_mapping JSON: %v. Using defaults.", err))
 		} else {
 			cfg.CustomTypeMapping = mapping
 		}

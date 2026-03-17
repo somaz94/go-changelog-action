@@ -67,6 +67,10 @@ inputs:
     description: 'JSON object mapping commit types to custom section names (e.g., {"feat": "New Features", "fix": "Bugfixes"})'
     required: false
     default: ''
+  exclude_authors:
+    description: 'Comma-separated list of author name patterns to exclude from Contributors (supports suffix matching with *). Default excludes common bots.'
+    required: false
+    default: 'GitHub Action,GitHub Actions,dependabot[bot],renovate[bot],github-actions[bot]'
 
 outputs:
   changelog_file:
@@ -97,3 +101,4 @@ runs:
     INPUT_SINCE_TAG: ${{ inputs.since_tag }}
     INPUT_UNTIL_TAG: ${{ inputs.until_tag }}
     INPUT_CUSTOM_TYPE_MAPPING: ${{ inputs.custom_type_mapping }}
+    INPUT_EXCLUDE_AUTHORS: ${{ inputs.exclude_authors }}

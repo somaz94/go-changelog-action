@@ -26,6 +26,7 @@ type Config struct {
 	SinceTag               string
 	UntilTag               string
 	CustomTypeMapping      map[string]string
+	ExcludeAuthors         []string
 }
 
 // Load reads configuration from environment variables (INPUT_*).
@@ -44,6 +45,15 @@ func Load() *Config {
 		IncludeNonConventional: getEnvDefault("INPUT_INCLUDE_NON_CONVENTIONAL", "false") == "true",
 		SinceTag:               os.Getenv("INPUT_SINCE_TAG"),
 		UntilTag:               os.Getenv("INPUT_UNTIL_TAG"),
+	}
+
+	if excludeAuthors := os.Getenv("INPUT_EXCLUDE_AUTHORS"); excludeAuthors != "" {
+		for _, a := range strings.Split(excludeAuthors, ",") {
+			trimmed := strings.TrimSpace(a)
+			if trimmed != "" {
+				cfg.ExcludeAuthors = append(cfg.ExcludeAuthors, trimmed)
+			}
+		}
 	}
 
 	if excludeStr := os.Getenv("INPUT_EXCLUDE_TYPES"); excludeStr != "" {

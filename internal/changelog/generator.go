@@ -36,6 +36,7 @@ type GeneratorConfig struct {
 	SinceTag            string
 	UntilTag            string
 	CustomTypeMapping   map[string]string
+	ExcludeAuthors      []string
 }
 
 // Result holds the output of changelog generation.
@@ -87,7 +88,7 @@ func Generate(cfg GeneratorConfig) (*Result, error) {
 		}
 		commits, err := git.GetCommitsSinceTag(latestTag)
 		if err == nil && len(commits) > 0 {
-			entry := buildEntry(cfg.UnreleasedTitle, "", time.Now(), commits, skipRegex, excludeSet, cfg.IncludeBreaking, cfg.IncludeNonConventional, cfg.CustomTypeMapping)
+			entry := buildEntry(cfg.UnreleasedTitle, "", time.Now(), commits, skipRegex, excludeSet, cfg.IncludeBreaking, cfg.IncludeNonConventional, cfg.CustomTypeMapping, cfg.ExcludeAuthors)
 			if hasSections(entry) {
 				entries = append(entries, entry)
 			}
@@ -109,7 +110,7 @@ func Generate(cfg GeneratorConfig) (*Result, error) {
 			continue
 		}
 
-		entry := buildEntry(tag.Name, prevVersion, tag.Date, commits, skipRegex, excludeSet, cfg.IncludeBreaking, cfg.IncludeNonConventional, cfg.CustomTypeMapping)
+		entry := buildEntry(tag.Name, prevVersion, tag.Date, commits, skipRegex, excludeSet, cfg.IncludeBreaking, cfg.IncludeNonConventional, cfg.CustomTypeMapping, cfg.ExcludeAuthors)
 		entries = append(entries, entry)
 	}
 
@@ -163,7 +164,23 @@ func filterTags(tags []git.Tag, sinceTag, untilTag string) []git.Tag {
 	return tags[startIdx:endIdx]
 }
 
-func buildEntry(version, prevVersion string, date time.Time, commits []git.Commit, skipRegex *regexp.Regexp, excludeSet map[string]bool, includeBreaking, includeNonConventional bool, customMapping map[string]string) Entry {
+func isExcludedAuthor(author string, excludeAuthors []string) bool {
+	for _, pattern := range excludeAuthors {
+		if strings.EqualFold(author, pattern) {
+			return true
+		}
+		// Suffix matching: "bot*" matches "dependabot", "[bot]*" matches anything ending with [bot]
+		if strings.HasSuffix(pattern, "*") {
+			prefix := strings.ToLower(strings.TrimSuffix(pattern, "*"))
+			if strings.Contains(strings.ToLower(author), prefix) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func buildEntry(version, prevVersion string, date time.Time, commits []git.Commit, skipRegex *regexp.Regexp, excludeSet map[string]bool, includeBreaking, includeNonConventional bool, customMapping map[string]string, excludeAuthors []string) Entry {
 	entry := Entry{
 		Version:     version,
 		PrevVersion: prevVersion,
@@ -178,8 +195,8 @@ func buildEntry(version, prevVersion string, date time.Time, commits []git.Commi
 			continue
 		}
 
-		// Track contributors
-		if commit.Author != "" {
+		// Track contributors (excluding bots)
+		if commit.Author != "" && !isExcludedAuthor(commit.Author, excludeAuthors) {
 			contributorSet[commit.Author] = true
 		}
 

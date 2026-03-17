@@ -36,7 +36,7 @@ func TestBuildEntry(t *testing.T) {
 	skipRegex := regexp.MustCompile("^Merge")
 	excludeSet := map[string]bool{"chore": true}
 
-	entry := buildEntry("v1.0.0", "v0.9.0", time.Now(), commits, skipRegex, excludeSet, true, false, nil)
+	entry := buildEntry("v1.0.0", "v0.9.0", time.Now(), commits, skipRegex, excludeSet, true, false, nil, nil)
 
 	if entry.Version != "v1.0.0" {
 		t.Errorf("expected version v1.0.0, got %s", entry.Version)
@@ -66,7 +66,7 @@ func TestBuildEntryBreaking(t *testing.T) {
 		{Hash: "abc1234567890", Message: "feat!: breaking change", Date: time.Now(), Author: "test"},
 	}
 
-	entry := buildEntry("v2.0.0", "v1.0.0", time.Now(), commits, nil, nil, true, false, nil)
+	entry := buildEntry("v2.0.0", "v1.0.0", time.Now(), commits, nil, nil, true, false, nil, nil)
 
 	if len(entry.Breaking) != 1 {
 		t.Errorf("expected 1 breaking change, got %d", len(entry.Breaking))
@@ -80,13 +80,13 @@ func TestBuildEntryNonConventional(t *testing.T) {
 	}
 
 	// Without includeNonConventional
-	entry := buildEntry("v1.0.0", "", time.Now(), commits, nil, nil, true, false, nil)
+	entry := buildEntry("v1.0.0", "", time.Now(), commits, nil, nil, true, false, nil, nil)
 	if len(entry.Sections) != 1 {
 		t.Errorf("expected 1 section without non-conventional, got %d", len(entry.Sections))
 	}
 
 	// With includeNonConventional
-	entry2 := buildEntry("v1.0.0", "", time.Now(), commits, nil, nil, true, true, nil)
+	entry2 := buildEntry("v1.0.0", "", time.Now(), commits, nil, nil, true, true, nil, nil)
 	if len(entry2.Sections) != 2 {
 		t.Errorf("expected 2 sections with non-conventional, got %d: %v", len(entry2.Sections), getSectionNames(entry2))
 	}
@@ -101,7 +101,7 @@ func TestBuildEntryCustomMapping(t *testing.T) {
 	}
 
 	customMapping := map[string]string{"feat": "New Features"}
-	entry := buildEntry("v1.0.0", "", time.Now(), commits, nil, nil, true, false, customMapping)
+	entry := buildEntry("v1.0.0", "", time.Now(), commits, nil, nil, true, false, customMapping, nil)
 
 	if _, ok := entry.Sections["New Features"]; !ok {
 		t.Errorf("expected 'New Features' section with custom mapping, got: %v", getSectionNames(entry))
@@ -387,7 +387,7 @@ func TestBuildEntryBreakingDisabled(t *testing.T) {
 		{Hash: "abc1234567890", Message: "feat!: breaking change", Date: time.Now(), Author: "test"},
 	}
 
-	entry := buildEntry("v2.0.0", "v1.0.0", time.Now(), commits, nil, nil, false, false, nil)
+	entry := buildEntry("v2.0.0", "v1.0.0", time.Now(), commits, nil, nil, false, false, nil, nil)
 
 	if len(entry.Breaking) != 0 {
 		t.Errorf("expected 0 breaking changes when disabled, got %d", len(entry.Breaking))
@@ -650,6 +650,44 @@ func TestGenerateGetCommitsBetweenError(t *testing.T) {
 	// Should produce result with 0 entries since commits failed
 	if result.EntriesCount != 0 {
 		t.Errorf("expected 0 entries when commits fail, got %d", result.EntriesCount)
+	}
+}
+
+func TestIsExcludedAuthor(t *testing.T) {
+	excludeList := []string{"GitHub Action", "GitHub Actions", "dependabot[bot]", "renovate[bot]", "github-actions[bot]"}
+
+	tests := []struct {
+		author   string
+		excluded bool
+	}{
+		{"GitHub Action", true},
+		{"GitHub Actions", true},
+		{"dependabot[bot]", true},
+		{"renovate[bot]", true},
+		{"github-actions[bot]", true},
+		{"somaz", false},
+		{"alice", false},
+	}
+
+	for _, tt := range tests {
+		if got := isExcludedAuthor(tt.author, excludeList); got != tt.excluded {
+			t.Errorf("isExcludedAuthor(%q) = %v, want %v", tt.author, got, tt.excluded)
+		}
+	}
+}
+
+func TestBuildEntryExcludeAuthors(t *testing.T) {
+	commits := []git.Commit{
+		{Hash: "abc123", Message: "feat: feature", Date: time.Now(), Author: "somaz"},
+		{Hash: "def456", Message: "ci: update workflow", Date: time.Now(), Author: "GitHub Actions"},
+		{Hash: "ghi789", Message: "chore(deps): bump deps", Date: time.Now(), Author: "dependabot[bot]"},
+	}
+
+	excludeAuthors := []string{"GitHub Actions", "dependabot[bot]"}
+	entry := buildEntry("v1.0.0", "", time.Now(), commits, nil, nil, false, false, nil, excludeAuthors)
+
+	if len(entry.Contributors) != 1 || entry.Contributors[0] != "somaz" {
+		t.Errorf("expected only [somaz], got %v", entry.Contributors)
 	}
 }
 

@@ -73,6 +73,7 @@ func run(ctx context.Context) error {
 		SinceTag:               cfg.SinceTag,
 		UntilTag:               cfg.UntilTag,
 		CustomTypeMapping:      cfg.CustomTypeMapping,
+		ExcludeAuthors:         cfg.ExcludeAuthors,
 	}
 
 	result, err := changelog.Generate(genCfg)

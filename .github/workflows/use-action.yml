@@ -108,10 +108,41 @@ jobs:
             exit 1
           fi
 
+  smoke-test-exclude-authors:
+    name: Smoke Test (Exclude Authors)
+    runs-on: ubuntu-latest
+    needs: [smoke-test-custom-options]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Generate with default exclude_authors
+        uses: somaz94/go-changelog-action@v1
+        with:
+          output_file: CHANGELOG-EXCLUDE.md
+
+      - name: Verify bots are excluded from Contributors
+        run: |
+          if grep -q "dependabot\[bot\]" CHANGELOG-EXCLUDE.md; then
+            echo "FAIL: dependabot[bot] should be excluded"
+            exit 1
+          fi
+          if grep -q "^- GitHub Action$" CHANGELOG-EXCLUDE.md; then
+            echo "FAIL: GitHub Action should be excluded"
+            exit 1
+          fi
+          if grep -q "^- GitHub Actions$" CHANGELOG-EXCLUDE.md; then
+            echo "FAIL: GitHub Actions should be excluded"
+            exit 1
+          fi
+          echo "PASS: bot authors excluded from Contributors"
+
   smoke-test-advanced-options:
     name: Smoke Test (Advanced Options)
     runs-on: ubuntu-latest
-    needs: [smoke-test-custom-options]
+    needs: [smoke-test-exclude-authors]
     steps:
       - name: Checkout
         uses: actions/checkout@v6

@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.0.4](https://github.com/somaz94/go-changelog-action/compare/v1.0.3...v1.0.4) (2026-03-16)
+
+### Features
+
+- add br separator between version entries in changelog ([191c649](https://github.com/somaz94/go-changelog-action/commit/191c649f57e7a2f156cd66bbdf071c34747ee081))
+
+### Documentation
+
+- update changelog ([3a66fd0](https://github.com/somaz94/go-changelog-action/commit/3a66fd0c5ce43eab4dd1ceeba9d2222cb0b6549a))
+
+### Contributors
+
+- GitHub Actions
+- somaz
+
+<br/>
+
 ## [v1.0.3](https://github.com/somaz94/go-changelog-action/compare/v1.0.2...v1.0.3) (2026-03-16)
 
 ### Code Refactoring
@@ -21,6 +38,8 @@ All notable changes to this project will be documented in this file.
 
 - GitHub Actions
 - somaz
+
+<br/>
 
 ## [v1.0.2](https://github.com/somaz94/go-changelog-action/compare/v1.0.1...v1.0.2) (2026-03-16)
 
@@ -42,6 +61,8 @@ All notable changes to this project will be documented in this file.
 
 - GitHub Actions
 - somaz
+
+<br/>
 
 ## [v1.0.1](https://github.com/somaz94/go-changelog-action/compare/v1.0.0...v1.0.1) (2026-03-16)
 
@@ -65,6 +86,8 @@ All notable changes to this project will be documented in this file.
 
 - GitHub Actions
 - somaz
+
+<br/>
 
 ## [v1.0.0](https://github.com/somaz94/go-changelog-action/releases/tag/v1.0.0) (2026-03-16)
 
@@ -95,4 +118,6 @@ All notable changes to this project will be documented in this file.
 
 - dependabot[bot]
 - somaz
+
+<br/>
 

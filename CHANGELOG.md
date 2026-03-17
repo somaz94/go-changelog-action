@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.0.5](https://github.com/somaz94/go-changelog-action/compare/v1.0.4...v1.0.5) (2026-03-17)
+
+### Features
+
+- add exclude_authors option to filter bots from contributors ([3171a70](https://github.com/somaz94/go-changelog-action/commit/3171a70292ee2d904939998a7c273400a73ad2c5))
+
+### Documentation
+
+- add exclude_authors usage and default bot filtering to README ([d899e07](https://github.com/somaz94/go-changelog-action/commit/d899e071d95b9336da83b6aa080cd727b3d76b42))
+- update changelog ([63dc5ad](https://github.com/somaz94/go-changelog-action/commit/63dc5adede43edf1944dc1924b939d8293a99019))
+
+### Continuous Integration
+
+- use somaz94/contributors-action@v1 for contributors generation ([f59cadc](https://github.com/somaz94/go-changelog-action/commit/f59cadcd31e2110dd9dd26e3e8f67e029053ab7e))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.0.4](https://github.com/somaz94/go-changelog-action/compare/v1.0.3...v1.0.4) (2026-03-16)
 
 ### Features
@@ -14,7 +35,6 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Actions
 - somaz
 
 <br/>
@@ -36,7 +56,6 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Actions
 - somaz
 
 <br/>
@@ -59,7 +78,6 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Actions
 - somaz
 
 <br/>
@@ -84,7 +102,6 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- GitHub Actions
 - somaz
 
 <br/>
@@ -116,7 +133,6 @@ All notable changes to this project will be documented in this file.
 
 ### Contributors
 
-- dependabot[bot]
 - somaz
 
 <br/>

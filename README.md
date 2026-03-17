@@ -18,7 +18,7 @@ A Go-based GitHub Action that generates changelogs from
 - Highlights BREAKING CHANGES
 - Auto-detects PR links (`(#123)`) and issue references (`closes #456`)
 - Generates compare links between versions (`v1.0.0...v1.1.0`)
-- Contributors section per release
+- Contributors section per release (with bot filtering via `exclude_authors`)
 - Includes non-conventional commits in "Other Changes" (optional)
 - Tag range filtering with `since_tag` / `until_tag`
 - Custom type-to-section mapping via JSON
@@ -69,6 +69,7 @@ steps:
       date_format: '2006-01-02'
       unreleased: true
       skip_commits: '^Merge'
+      exclude_authors: 'GitHub Action,GitHub Actions,dependabot[bot],renovate[bot],github-actions[bot]'
 
   - name: Commit Changelog
     uses: somaz94/go-git-commit-action@v1
@@ -136,6 +137,7 @@ steps:
 | `since_tag` | Generate changelog starting from this tag (inclusive) | No | `` |
 | `until_tag` | Generate changelog up to this tag (inclusive) | No | `` |
 | `custom_type_mapping` | JSON mapping of commit types to section names | No | `` |
+| `exclude_authors` | Comma-separated author names to exclude from Contributors (supports `*` suffix for contains matching) | No | `GitHub Action,GitHub Actions,dependabot[bot],renovate[bot],github-actions[bot]` |
 
 <br/>
 
@@ -212,6 +214,29 @@ Breaking changes are detected via:
 
 - `!` after the type/scope: `feat!: remove deprecated API`
 - `BREAKING CHANGE` in the commit body
+
+<br/>
+
+### Contributor Filtering
+
+By default, the following bot/automation accounts are excluded from the Contributors section:
+
+- `GitHub Action`
+- `GitHub Actions`
+- `dependabot[bot]`
+- `renovate[bot]`
+- `github-actions[bot]`
+
+You can customize this via the `exclude_authors` input. Use `*` suffix for contains matching (e.g., `bot*` excludes any author containing "bot").
+
+To disable filtering and include all authors:
+
+```yaml
+- name: Generate Changelog (no bot filtering)
+  uses: somaz94/go-changelog-action@v1
+  with:
+    exclude_authors: ''
+```
 
 <br/>
 

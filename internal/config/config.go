@@ -39,7 +39,7 @@ func Load() *Config {
 		Header:                 getEnvDefault("INPUT_HEADER", "# Changelog"),
 		Unreleased:             getEnvDefault("INPUT_UNRELEASED", "true") == "true",
 		UnreleasedTitle:        getEnvDefault("INPUT_UNRELEASED_TITLE", "Unreleased"),
-		SkipCommits:            getEnvDefault("INPUT_SKIP_COMMITS", "^Merge"),
+		SkipCommits:            getEnvDefault("INPUT_SKIP_COMMITS", "^Merge|^docs: update changelog|^docs: update CONTRIBUTORS"),
 		RepositoryURL:          os.Getenv("INPUT_REPOSITORY_URL"),
 		DryRun:                 getEnvDefault("INPUT_DRY_RUN", "false") == "true",
 		IncludeNonConventional: getEnvDefault("INPUT_INCLUDE_NON_CONVENTIONAL", "false") == "true",

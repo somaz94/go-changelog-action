@@ -68,7 +68,7 @@ steps:
       include_non_conventional: true
       date_format: '2006-01-02'
       unreleased: true
-      skip_commits: '^Merge'
+      skip_commits: '^Merge|^docs: update changelog|^docs: update CONTRIBUTORS'
       exclude_authors: 'GitHub Action,GitHub Actions,dependabot[bot],renovate[bot],github-actions[bot]'
 
   - name: Commit Changelog
@@ -130,7 +130,7 @@ steps:
 | `header` | Custom header for changelog | No | `# Changelog` |
 | `unreleased` | Include unreleased changes section | No | `true` |
 | `unreleased_title` | Title for unreleased section | No | `Unreleased` |
-| `skip_commits` | Regex pattern to skip commits | No | `^Merge` |
+| `skip_commits` | Regex pattern to skip commits | No | `^Merge\|^docs: update changelog\|^docs: update CONTRIBUTORS` |
 | `repository_url` | Repository URL for links (auto-detected) | No | `` |
 | `dry_run` | Preview without writing to file | No | `false` |
 | `include_non_conventional` | Include non-conventional commits in "Other Changes" | No | `false` |

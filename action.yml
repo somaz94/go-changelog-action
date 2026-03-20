@@ -42,7 +42,7 @@ inputs:
   skip_commits:
     description: 'Regex pattern to skip matching commit messages'
     required: false
-    default: '^Merge'
+    default: '^Merge|^docs: update changelog|^docs: update CONTRIBUTORS'
   repository_url:
     description: 'Repository URL for commit/compare links (auto-detected if not set)'
     required: false

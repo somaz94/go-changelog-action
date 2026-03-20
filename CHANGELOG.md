@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.0.6](https://github.com/somaz94/go-changelog-action/compare/v1.0.5...v1.0.6) (2026-03-20)
+
+### Features
+
+- skip changelog and contributors auto-commits by default ([a508ce6](https://github.com/somaz94/go-changelog-action/commit/a508ce69081498e906e8c6483f940ba62b3a008b))
+
+### Documentation
+
+- add no-push rule to CLAUDE.md ([be8bdf7](https://github.com/somaz94/go-changelog-action/commit/be8bdf75f142554ffeb7dcb2b9e8fab78e8ef822))
+- add CLAUDE.md project guide ([9eb5d79](https://github.com/somaz94/go-changelog-action/commit/9eb5d7901a132e479f5ad7c02d48aa4bb10897a9))
+
+### Tests
+
+- add exclude_authors smoke test and CI docker env ([f15a8e1](https://github.com/somaz94/go-changelog-action/commit/f15a8e14767f7418bf84fbe9618a5cf7e72d8f01))
+
+### Continuous Integration
+
+- migrate gitlab-mirror workflow to multi-git-mirror action ([e8664e6](https://github.com/somaz94/go-changelog-action/commit/e8664e687c2e25bf1a3c78772b94f566f3f0f818))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.0.5](https://github.com/somaz94/go-changelog-action/compare/v1.0.4...v1.0.5) (2026-03-17)
 
 ### Features
@@ -11,7 +36,6 @@ All notable changes to this project will be documented in this file.
 ### Documentation
 
 - add exclude_authors usage and default bot filtering to README ([d899e07](https://github.com/somaz94/go-changelog-action/commit/d899e071d95b9336da83b6aa080cd727b3d76b42))
-- update changelog ([63dc5ad](https://github.com/somaz94/go-changelog-action/commit/63dc5adede43edf1944dc1924b939d8293a99019))
 
 ### Continuous Integration
 
@@ -29,10 +53,6 @@ All notable changes to this project will be documented in this file.
 
 - add br separator between version entries in changelog ([191c649](https://github.com/somaz94/go-changelog-action/commit/191c649f57e7a2f156cd66bbdf071c34747ee081))
 
-### Documentation
-
-- update changelog ([3a66fd0](https://github.com/somaz94/go-changelog-action/commit/3a66fd0c5ce43eab4dd1ceeba9d2222cb0b6549a))
-
 ### Contributors
 
 - somaz
@@ -44,11 +64,6 @@ All notable changes to this project will be documented in this file.
 ### Code Refactoring
 
 - improve code quality and consistency ([2015dab](https://github.com/somaz94/go-changelog-action/commit/2015dab65335a4095752334766b83489e0fe2afa))
-
-### Documentation
-
-- update CONTRIBUTORS.md ([195ec57](https://github.com/somaz94/go-changelog-action/commit/195ec57262acaf82ace6778493f91023e2f06474))
-- update changelog ([41585be](https://github.com/somaz94/go-changelog-action/commit/41585be59d2e56518497faf423186441228cd6c6))
 
 ### Continuous Integration
 
@@ -66,10 +81,6 @@ All notable changes to this project will be documented in this file.
 
 - improve error handling, deduplicate issues, and raise test coverage to 95% ([4af6c43](https://github.com/somaz94/go-changelog-action/commit/4af6c43f5ed3bae9a3904c9edded563b57493be8))
 - changelog-generator.yml ([2fbc07a](https://github.com/somaz94/go-changelog-action/commit/2fbc07a20696c42d041b69c45d1717de076c5586))
-
-### Documentation
-
-- update changelog ([1bb40f4](https://github.com/somaz94/go-changelog-action/commit/1bb40f42aa1ee8ecae967b3d685d8bf23a58e9a7))
 
 ### Continuous Integration
 
@@ -96,9 +107,7 @@ All notable changes to this project will be documented in this file.
 
 ### Documentation
 
-- update changelog ([d78b0c1](https://github.com/somaz94/go-changelog-action/commit/d78b0c1ee99e297f1db0e64b81e2776c9498292c))
 - README.md ([4ed9b19](https://github.com/somaz94/go-changelog-action/commit/4ed9b190a83446472270cb5a2f5a5a2d0e637ed0))
-- update changelog ([cb78d9b](https://github.com/somaz94/go-changelog-action/commit/cb78d9b00129036b9d72a57ac92a2c5b694431d9))
 
 ### Contributors
 

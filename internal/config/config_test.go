@@ -129,3 +129,30 @@ func TestLoadInvalidJSON(t *testing.T) {
 		t.Errorf("expected nil CustomTypeMapping for invalid JSON, got %v", cfg.CustomTypeMapping)
 	}
 }
+
+func TestLoadExcludeAuthors(t *testing.T) {
+	os.Setenv("INPUT_EXCLUDE_AUTHORS", "GitHub Actions, dependabot[bot], , renovate[bot]")
+	defer os.Unsetenv("INPUT_EXCLUDE_AUTHORS")
+
+	cfg := Load()
+
+	if len(cfg.ExcludeAuthors) != 3 {
+		t.Fatalf("expected 3 ExcludeAuthors, got %d: %v", len(cfg.ExcludeAuthors), cfg.ExcludeAuthors)
+	}
+	expected := []string{"GitHub Actions", "dependabot[bot]", "renovate[bot]"}
+	for i, v := range expected {
+		if cfg.ExcludeAuthors[i] != v {
+			t.Errorf("expected ExcludeAuthors[%d]=%s, got %s", i, v, cfg.ExcludeAuthors[i])
+		}
+	}
+}
+
+func TestLoadExcludeAuthorsEmpty(t *testing.T) {
+	os.Unsetenv("INPUT_EXCLUDE_AUTHORS")
+
+	cfg := Load()
+
+	if len(cfg.ExcludeAuthors) != 0 {
+		t.Errorf("expected empty ExcludeAuthors, got %v", cfg.ExcludeAuthors)
+	}
+}

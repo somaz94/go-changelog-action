@@ -177,7 +177,11 @@ func parseCommits(raw string) ([]Commit, error) {
 
 		date, err := time.Parse(time.RFC3339, dateStr)
 		if err != nil {
-			output.LogWarning(fmt.Sprintf("Failed to parse date for commit %s: %v", hash[:7], err))
+			shortHash := hash
+			if len(shortHash) > 7 {
+				shortHash = shortHash[:7]
+			}
+			output.LogWarning(fmt.Sprintf("Failed to parse date for commit %s: %v", shortHash, err))
 		}
 
 		commits = append(commits, Commit{

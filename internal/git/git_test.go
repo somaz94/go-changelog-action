@@ -391,6 +391,40 @@ func TestGetRemoteURLSSH(t *testing.T) {
 	}
 }
 
+func TestParseTagsInvalidDate(t *testing.T) {
+	output := "v1.0.0|abc1234|not-a-date"
+	tags, err := parseTags(output, "v*")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(tags) != 1 {
+		t.Fatalf("expected 1 tag, got %d", len(tags))
+	}
+	if tags[0].Name != "v1.0.0" {
+		t.Errorf("expected v1.0.0, got %s", tags[0].Name)
+	}
+	if !tags[0].Date.IsZero() {
+		t.Errorf("expected zero date for invalid date string, got %v", tags[0].Date)
+	}
+}
+
+func TestParseCommitsInvalidDate(t *testing.T) {
+	input := "abc123\x01feat: feature\x01not-a-date\x01alice\x01body\x00"
+	commits, err := parseCommits(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(commits) != 1 {
+		t.Fatalf("expected 1 commit, got %d", len(commits))
+	}
+	if commits[0].Hash != "abc123" {
+		t.Errorf("expected hash abc123, got %s", commits[0].Hash)
+	}
+	if !commits[0].Date.IsZero() {
+		t.Errorf("expected zero date for invalid date string, got %v", commits[0].Date)
+	}
+}
+
 func TestGetRemoteURLError(t *testing.T) {
 	restore := mockRunner(nil, fmt.Errorf("git error"))
 	defer restore()

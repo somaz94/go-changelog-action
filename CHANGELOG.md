@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.0.7](https://github.com/somaz94/go-changelog-action/compare/v1.0.6...v1.0.7) (2026-03-25)
+
+### Bug Fixes
+
+- add path traversal protection, git timeout, and isExcludedAuthor tests ([dbc5ddf](https://github.com/somaz94/go-changelog-action/commit/dbc5ddf872154c22536713a0cad0491f0c8bb218))
+
+### Tests
+
+- improve test coverage and fix short hash panic ([b6354a7](https://github.com/somaz94/go-changelog-action/commit/b6354a7ba7ebf748c8fe74f7e3d96bef618150b9))
+
+### Continuous Integration
+
+- skip auto-generated changelog and contributors commits in release notes ([a8cf70b](https://github.com/somaz94/go-changelog-action/commit/a8cf70b52cf82bbbcf8c36ccd91724f649439aad))
+- revert to body_path RELEASE.md in release workflow ([def9762](https://github.com/somaz94/go-changelog-action/commit/def9762cb61f5acdc1ff3581ff5cf6e8a0c13e51))
+- use generate_release_notes instead of body_path in release workflow ([a038a43](https://github.com/somaz94/go-changelog-action/commit/a038a438fb15aeccccc5d5d79757f8af7e12aa0b))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.0.6](https://github.com/somaz94/go-changelog-action/compare/v1.0.5...v1.0.6) (2026-03-20)
 
 ### Features

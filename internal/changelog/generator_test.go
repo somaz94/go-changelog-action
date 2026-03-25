@@ -676,6 +676,45 @@ func TestIsExcludedAuthor(t *testing.T) {
 	}
 }
 
+func TestIsExcludedAuthorCaseInsensitive(t *testing.T) {
+	excludeList := []string{"GitHub Actions"}
+	if !isExcludedAuthor("github actions", excludeList) {
+		t.Error("expected case-insensitive match for 'github actions'")
+	}
+	if !isExcludedAuthor("GITHUB ACTIONS", excludeList) {
+		t.Error("expected case-insensitive match for 'GITHUB ACTIONS'")
+	}
+}
+
+func TestIsExcludedAuthorWildcard(t *testing.T) {
+	excludeList := []string{"bot*"}
+	tests := []struct {
+		author   string
+		excluded bool
+	}{
+		{"dependabot", true},
+		{"renovatebot", true},
+		{"mybot", true},
+		{"bot", true},
+		{"alice", false},
+		{"somaz", false},
+	}
+	for _, tt := range tests {
+		if got := isExcludedAuthor(tt.author, excludeList); got != tt.excluded {
+			t.Errorf("isExcludedAuthor(%q, [bot*]) = %v, want %v", tt.author, got, tt.excluded)
+		}
+	}
+}
+
+func TestIsExcludedAuthorEmptyList(t *testing.T) {
+	if isExcludedAuthor("anyone", nil) {
+		t.Error("expected no exclusion with nil list")
+	}
+	if isExcludedAuthor("anyone", []string{}) {
+		t.Error("expected no exclusion with empty list")
+	}
+}
+
 func TestBuildEntryExcludeAuthors(t *testing.T) {
 	commits := []git.Commit{
 		{Hash: "abc123", Message: "feat: feature", Date: time.Now(), Author: "somaz"},

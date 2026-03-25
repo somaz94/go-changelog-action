@@ -1,6 +1,7 @@
 package git
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"regexp"
@@ -10,6 +11,9 @@ import (
 
 	"github.com/somaz94/go-changelog-action/internal/output"
 )
+
+// DefaultTimeout is the maximum duration for a single git command.
+const DefaultTimeout = 5 * time.Minute
 
 // Commit represents a parsed git commit.
 type Commit struct {
@@ -30,7 +34,9 @@ type Tag struct {
 // RunCommand executes a git command and returns its output.
 // This is a package-level variable so tests can override it.
 var RunCommand = func(args ...string) ([]byte, error) {
-	return exec.Command("git", args...).Output()
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer cancel()
+	return exec.CommandContext(ctx, "git", args...).Output()
 }
 
 // commitFormat uses SOH (\x01) as field separator and NUL (\x00) as record separator.

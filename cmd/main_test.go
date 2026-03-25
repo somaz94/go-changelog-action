@@ -232,6 +232,42 @@ func TestRunWriteFileError(t *testing.T) {
 	}
 }
 
+func TestRunPathTraversal(t *testing.T) {
+	original := git.RunCommand
+	git.RunCommand = func(args ...string) ([]byte, error) {
+		if len(args) > 0 && args[0] == "tag" {
+			return []byte("v1.0.0|abc1234|2024-01-01T00:00:00Z\n"), nil
+		}
+		if len(args) > 0 && args[0] == "remote" {
+			return []byte("https://github.com/owner/repo\n"), nil
+		}
+		if len(args) > 0 && args[0] == "log" {
+			return []byte("aaa111\x01feat: feature\x012024-01-15T10:00:00Z\x01alice\x01\x00"), nil
+		}
+		return []byte(""), nil
+	}
+	defer func() { git.RunCommand = original }()
+
+	tmpDir := t.TempDir()
+	os.Setenv("INPUT_DRY_RUN", "false")
+	os.Setenv("INPUT_OUTPUT_FILE", "../../etc/passwd")
+	os.Setenv("GITHUB_WORKSPACE", tmpDir)
+	defer func() {
+		os.Unsetenv("INPUT_DRY_RUN")
+		os.Unsetenv("INPUT_OUTPUT_FILE")
+		os.Unsetenv("GITHUB_WORKSPACE")
+	}()
+
+	ctx := context.Background()
+	err := run(ctx)
+	if err == nil {
+		t.Fatal("expected error for path traversal")
+	}
+	if !strings.Contains(err.Error(), "outside workspace") {
+		t.Errorf("expected 'outside workspace' error, got: %v", err)
+	}
+}
+
 func TestRunCancelled(t *testing.T) {
 	original := git.RunCommand
 	git.RunCommand = func(args ...string) ([]byte, error) {

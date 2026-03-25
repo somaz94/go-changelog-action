@@ -6,7 +6,9 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/somaz94/go-changelog-action/internal/changelog"
@@ -85,10 +87,20 @@ func run(ctx context.Context) error {
 		output.LogInfo("Dry run mode - changelog preview:")
 		fmt.Println(result.Content)
 	} else {
-		if err := os.WriteFile(cfg.OutputFile, []byte(result.Content), 0644); err != nil {
+		// Validate output path is within workspace to prevent path traversal
+		outputPath := cfg.OutputFile
+		if !filepath.IsAbs(outputPath) {
+			outputPath = filepath.Join(workDir, outputPath)
+		}
+		outputPath = filepath.Clean(outputPath)
+		if !strings.HasPrefix(outputPath, workDir) {
+			return fmt.Errorf("output file %q is outside workspace %q", cfg.OutputFile, workDir)
+		}
+
+		if err := os.WriteFile(outputPath, []byte(result.Content), 0644); err != nil {
 			return fmt.Errorf("failed to write changelog: %w", err)
 		}
-		output.LogInfo(fmt.Sprintf("Changelog written to %s", cfg.OutputFile))
+		output.LogInfo(fmt.Sprintf("Changelog written to %s", outputPath))
 	}
 
 	// Set outputs

@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 
 ### Builds
 
+- **deps:** bump dependabot/fetch-metadata from 2 to 3 ([362575f](https://github.com/somaz94/go-changelog-action/commit/362575f8a61d3beadcc9fce7feb3820a297c375d))
 - **deps:** bump actions/github-script from 8 to 9 ([71b0085](https://github.com/somaz94/go-changelog-action/commit/71b0085cbce894d5f0c8ba81be6cc104d4387ee3))
 - **deps:** bump softprops/action-gh-release from 2 to 3 ([85864ea](https://github.com/somaz94/go-changelog-action/commit/85864ea0baf0ef083846743b7749d29dc15af26e))
 

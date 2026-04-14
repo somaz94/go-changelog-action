@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased (2026-04-14)
+
+### Documentation
+
+- remove duplicate rules covered by global CLAUDE.md ([8a97720](https://github.com/somaz94/go-changelog-action/commit/8a977206ef2c49f304484ee324a781170c467582))
+
+### Builds
+
+- **deps:** bump actions/github-script from 8 to 9 ([71b0085](https://github.com/somaz94/go-changelog-action/commit/71b0085cbce894d5f0c8ba81be6cc104d4387ee3))
+- **deps:** bump softprops/action-gh-release from 2 to 3 ([85864ea](https://github.com/somaz94/go-changelog-action/commit/85864ea0baf0ef083846743b7749d29dc15af26e))
+
+### Chores
+
+- remove duplicate rules from CLAUDE.md (moved to global) ([29e3654](https://github.com/somaz94/go-changelog-action/commit/29e36546ea92b423febf9ded3d2e3bc3dd88760d))
+- add git config protection to CLAUDE.md ([8fd3b8b](https://github.com/somaz94/go-changelog-action/commit/8fd3b8b3b5ba3ded6b897a3f7132aa71869fba4c))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.0.7](https://github.com/somaz94/go-changelog-action/compare/v1.0.6...v1.0.7) (2026-03-25)
 
 ### Bug Fixes

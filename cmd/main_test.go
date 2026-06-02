@@ -4,11 +4,28 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/somaz94/go-changelog-action/internal/git"
 )
+
+// TestMain isolates git's global/system config into throwaway temp files so the
+// `git config --global --add safe.directory` call in run() never accumulates
+// stale entries in the developer's real ~/.gitconfig during tests.
+func TestMain(m *testing.M) {
+	dir, err := os.MkdirTemp("", "go-changelog-action-gitconfig")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create temp gitconfig dir: %v\n", err)
+		os.Exit(1)
+	}
+	os.Setenv("GIT_CONFIG_GLOBAL", filepath.Join(dir, "config"))
+	os.Setenv("GIT_CONFIG_SYSTEM", os.DevNull)
+	code := m.Run()
+	_ = os.RemoveAll(dir)
+	os.Exit(code)
+}
 
 func TestRunDryRun(t *testing.T) {
 	// Mock git commands

@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased (2026-04-14)
+## [v1.0.8](https://github.com/somaz94/go-changelog-action/compare/v1.0.7...v1.0.8) (2026-06-02)
+
+### Code Refactoring
+
+- harden path containment, output close, and git stderr ([3040d5b](https://github.com/somaz94/go-changelog-action/commit/3040d5b6df8acc7a4c1a03e5fc96eeff8d30db8b))
 
 ### Documentation
 
@@ -13,6 +17,11 @@ All notable changes to this project will be documented in this file.
 - **deps:** bump dependabot/fetch-metadata from 2 to 3 ([362575f](https://github.com/somaz94/go-changelog-action/commit/362575f8a61d3beadcc9fce7feb3820a297c375d))
 - **deps:** bump actions/github-script from 8 to 9 ([71b0085](https://github.com/somaz94/go-changelog-action/commit/71b0085cbce894d5f0c8ba81be6cc104d4387ee3))
 - **deps:** bump softprops/action-gh-release from 2 to 3 ([85864ea](https://github.com/somaz94/go-changelog-action/commit/85864ea0baf0ef083846743b7749d29dc15af26e))
+
+### Continuous Integration
+
+- add concurrency guards to recurring workflows ([02addc0](https://github.com/somaz94/go-changelog-action/commit/02addc051c03e83fc751e8b92fa78e4a27e48e6f))
+- use go-docker-action-ci-action@v1 (replace inline prelude) ([30b6f39](https://github.com/somaz94/go-changelog-action/commit/30b6f390c3aaa019d1e7670d548f52f6aab7ecf9))
 
 ### Chores
 

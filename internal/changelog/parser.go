@@ -23,7 +23,6 @@ var (
 	conventionalRegex = regexp.MustCompile(`^(\w+)(?:\(([^)]*)\))?(!)?:\s*(.+)$`)
 	prRegex           = regexp.MustCompile(`\(#(\d+)\)`)
 	issueRefRegex     = regexp.MustCompile(`(?i)(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)`)
-	issueHashRegex    = regexp.MustCompile(`#(\d+)`)
 )
 
 // ParseConventionalCommit parses a commit message into a ConventionalCommit.

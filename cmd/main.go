@@ -46,6 +46,7 @@ func run(ctx context.Context) error {
 	if workDir == "" {
 		workDir = "/app"
 	}
+	workDir = filepath.Clean(workDir)
 	if err := os.Chdir(workDir); err != nil {
 		return fmt.Errorf("failed to change directory to %s: %w", workDir, err)
 	}
@@ -93,7 +94,8 @@ func run(ctx context.Context) error {
 			outputPath = filepath.Join(workDir, outputPath)
 		}
 		outputPath = filepath.Clean(outputPath)
-		if !strings.HasPrefix(outputPath, workDir) {
+		rel, relErr := filepath.Rel(workDir, outputPath)
+		if relErr != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 			return fmt.Errorf("output file %q is outside workspace %q", cfg.OutputFile, workDir)
 		}
 

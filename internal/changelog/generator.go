@@ -23,20 +23,20 @@ type Entry struct {
 
 // GeneratorConfig holds configuration for changelog generation.
 type GeneratorConfig struct {
-	TagPattern          string
-	ExcludeTypes        []string
-	IncludeBreaking     bool
-	DateFormat          string
-	Header              string
-	Unreleased          bool
-	UnreleasedTitle     string
-	SkipCommits         string
-	RepositoryURL       string
+	TagPattern             string
+	ExcludeTypes           []string
+	IncludeBreaking        bool
+	DateFormat             string
+	Header                 string
+	Unreleased             bool
+	UnreleasedTitle        string
+	SkipCommits            string
+	RepositoryURL          string
 	IncludeNonConventional bool
-	SinceTag            string
-	UntilTag            string
-	CustomTypeMapping   map[string]string
-	ExcludeAuthors      []string
+	SinceTag               string
+	UntilTag               string
+	CustomTypeMapping      map[string]string
+	ExcludeAuthors         []string
 }
 
 // Result holds the output of changelog generation.
@@ -169,7 +169,8 @@ func isExcludedAuthor(author string, excludeAuthors []string) bool {
 		if strings.EqualFold(author, pattern) {
 			return true
 		}
-		// Suffix matching: "bot*" matches "dependabot", "[bot]*" matches anything ending with [bot]
+		// Wildcard matching: a trailing "*" turns the remainder into a substring
+		// match, e.g. "bot*" matches "dependabot", "mybot", and "renovatebot".
 		if strings.HasSuffix(pattern, "*") {
 			prefix := strings.ToLower(strings.TrimSuffix(pattern, "*"))
 			if strings.Contains(strings.ToLower(author), prefix) {

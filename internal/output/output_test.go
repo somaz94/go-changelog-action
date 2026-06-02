@@ -54,7 +54,7 @@ func TestSetOutputMultiline(t *testing.T) {
 	}
 
 	content := string(data)
-	if !strings.Contains(content, "content<<EOF") {
+	if !strings.Contains(content, "content<<ghadelimiter_") {
 		t.Errorf("expected multiline delimiter, got: %s", content)
 	}
 	if !strings.Contains(content, "line1\nline2\nline3") {

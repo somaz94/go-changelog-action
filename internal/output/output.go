@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 // SetOutput sets a GitHub Actions output variable.
-func SetOutput(name, value string) error {
+func SetOutput(name, value string) (err error) {
 	outputFile := os.Getenv("GITHUB_OUTPUT")
 	if outputFile == "" {
 		// Fallback for local testing
@@ -19,11 +20,16 @@ func SetOutput(name, value string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open GITHUB_OUTPUT: %w", err)
 	}
-	defer f.Close()
+	defer func() {
+		if cerr := f.Close(); cerr != nil && err == nil {
+			err = cerr
+		}
+	}()
 
-	// Use delimiter for multiline values
+	// Use a collision-resistant delimiter for multiline values so a commit body
+	// line equal to the delimiter token cannot terminate the heredoc early.
 	if strings.Contains(value, "\n") {
-		delimiter := "EOF"
+		delimiter := fmt.Sprintf("ghadelimiter_%d", time.Now().UnixNano())
 		_, err = fmt.Fprintf(f, "%s<<%s\n%s\n%s\n", name, delimiter, value, delimiter)
 	} else {
 		_, err = fmt.Fprintf(f, "%s=%s\n", name, value)

@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased (2026-06-23)
+
+### Tests
+
+- isolate global git config in tests to stop ~/.gitconfig pollution ([8071ebf](https://github.com/somaz94/go-changelog-action/commit/8071ebfc607420771083ac8e3994b183bc65149d))
+
+### Builds
+
+- **deps:** bump actions/checkout from 6 to 7 (#6) ([#6](https://github.com/somaz94/go-changelog-action/pull/6)) ([85e90c1](https://github.com/somaz94/go-changelog-action/commit/85e90c1a52c256f6489bbda2932cb134cb3c2c18))
+- **deps:** bump alpine from 3.23 to 3.24 in the docker-minor group (#5) ([#5](https://github.com/somaz94/go-changelog-action/pull/5)) ([ec5f0eb](https://github.com/somaz94/go-changelog-action/commit/ec5f0eba8e67b8ff70becd52e545f41e07eb8106))
+
+### Continuous Integration
+
+- add DCO check via shared reusable workflow ([fd273dc](https://github.com/somaz94/go-changelog-action/commit/fd273dc5b49083ae79a4ef26885e67cdfcc975ed))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.0.8](https://github.com/somaz94/go-changelog-action/compare/v1.0.7...v1.0.8) (2026-06-02)
 
 ### Code Refactoring

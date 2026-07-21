@@ -31,8 +31,11 @@ type Tag struct {
 	Date time.Time
 }
 
-// RunCommand executes a git command and returns its output.
+// RunCommand executes a git command with a hard DefaultTimeout bound.
 // This is a package-level variable so tests can override it.
+// It intentionally derives its own context (not caller-threaded): all callers
+// are local read-only git ops, so SIGTERM propagation into subprocesses is not
+// worth the test-seam churn. Revisit if network git ops (fetch/clone/push) are added.
 var RunCommand = func(args ...string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()

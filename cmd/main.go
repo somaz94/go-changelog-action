@@ -52,7 +52,7 @@ func run(ctx context.Context) error {
 	}
 
 	// Configure git safe directory to avoid ownership issues in containers
-	if err := exec.Command("git", "config", "--global", "--add", "safe.directory", workDir).Run(); err != nil {
+	if err := exec.CommandContext(ctx, "git", "config", "--global", "--add", "safe.directory", workDir).Run(); err != nil {
 		output.LogWarning(fmt.Sprintf("Failed to set git safe.directory: %v", err))
 	}
 

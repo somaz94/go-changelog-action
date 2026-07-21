@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased (2026-06-23)
+## [v1.0.9](https://github.com/somaz94/go-changelog-action/compare/v1.0.8...v1.0.9) (2026-07-21)
+
+### Code Refactoring
+
+- propagate context to the git safe.directory command ([536ac6c](https://github.com/somaz94/go-changelog-action/commit/536ac6ccc50efedb324babdea6a63390c9ba790f))
 
 ### Tests
 
@@ -15,6 +19,14 @@ All notable changes to this project will be documented in this file.
 
 ### Continuous Integration
 
+- remove DCO workflow ([45ee5c5](https://github.com/somaz94/go-changelog-action/commit/45ee5c50c86bd88a374cc857045d220f197515b6))
+- adopt semantic-pr, labels, lock-threads, PR size, and auto-assign reusables ([b405a1a](https://github.com/somaz94/go-changelog-action/commit/b405a1a4e92bc53e312dfe79c6296ef06bbd1baf))
+- use reusable stale-issues workflow ([5002bcf](https://github.com/somaz94/go-changelog-action/commit/5002bcf8aa290acae12a6670e6d705bf800470a9))
+- use reusable issue-greeting workflow ([22cc5cd](https://github.com/somaz94/go-changelog-action/commit/22cc5cdb057c153ecc8e9369a18e217e9e15b897))
+- use reusable dependabot-auto-merge workflow ([a7ba28d](https://github.com/somaz94/go-changelog-action/commit/a7ba28d1fdc6e376eb05b84e97af0093988e80fa))
+- use reusable contributors workflow ([9457767](https://github.com/somaz94/go-changelog-action/commit/94577670b80df5a0a5fa8bf26de0210507ff495b))
+- add ok-to-test workflow stub ([06cc11e](https://github.com/somaz94/go-changelog-action/commit/06cc11e1a9ceb4c0b90c1e457030a6bd3b2e3ad3))
+- add PR welcome workflow stub ([e05c1b1](https://github.com/somaz94/go-changelog-action/commit/e05c1b1b1ccce86332ce7f5db5ca3c8de49c0ea0))
 - add DCO check via shared reusable workflow ([fd273dc](https://github.com/somaz94/go-changelog-action/commit/fd273dc5b49083ae79a4ef26885e67cdfcc975ed))
 
 ### Contributors

@@ -78,6 +78,15 @@ func Generate(cfg GeneratorConfig) (*Result, error) {
 	// Apply since/until tag filtering
 	tags = filterTags(tags, cfg.SinceTag, cfg.UntilTag)
 
+	builder := &entryBuilder{
+		skipRegex:              skipRegex,
+		excludeSet:             excludeSet,
+		includeBreaking:        cfg.IncludeBreaking,
+		includeNonConventional: cfg.IncludeNonConventional,
+		customMapping:          cfg.CustomTypeMapping,
+		excludeAuthors:         cfg.ExcludeAuthors,
+	}
+
 	var entries []Entry
 
 	// Generate unreleased section
@@ -88,7 +97,7 @@ func Generate(cfg GeneratorConfig) (*Result, error) {
 		}
 		commits, err := git.GetCommitsSinceTag(latestTag)
 		if err == nil && len(commits) > 0 {
-			entry := buildEntry(cfg.UnreleasedTitle, "", time.Now(), commits, skipRegex, excludeSet, cfg.IncludeBreaking, cfg.IncludeNonConventional, cfg.CustomTypeMapping, cfg.ExcludeAuthors)
+			entry := builder.build(cfg.UnreleasedTitle, "", time.Now(), commits)
 			if hasSections(entry) {
 				entries = append(entries, entry)
 			}
@@ -110,7 +119,7 @@ func Generate(cfg GeneratorConfig) (*Result, error) {
 			continue
 		}
 
-		entry := buildEntry(tag.Name, prevVersion, tag.Date, commits, skipRegex, excludeSet, cfg.IncludeBreaking, cfg.IncludeNonConventional, cfg.CustomTypeMapping, cfg.ExcludeAuthors)
+		entry := builder.build(tag.Name, prevVersion, tag.Date, commits)
 		entries = append(entries, entry)
 	}
 
@@ -181,7 +190,19 @@ func isExcludedAuthor(author string, excludeAuthors []string) bool {
 	return false
 }
 
-func buildEntry(version, prevVersion string, date time.Time, commits []git.Commit, skipRegex *regexp.Regexp, excludeSet map[string]bool, includeBreaking, includeNonConventional bool, customMapping map[string]string, excludeAuthors []string) Entry {
+// entryBuilder holds the per-call-invariant configuration for building
+// changelog entries. It is constructed once in Generate and reused across
+// every entry, so build only needs the per-entry arguments.
+type entryBuilder struct {
+	skipRegex              *regexp.Regexp
+	excludeSet             map[string]bool
+	includeBreaking        bool
+	includeNonConventional bool
+	customMapping          map[string]string
+	excludeAuthors         []string
+}
+
+func (b *entryBuilder) build(version, prevVersion string, date time.Time, commits []git.Commit) Entry {
 	entry := Entry{
 		Version:     version,
 		PrevVersion: prevVersion,
@@ -192,33 +213,33 @@ func buildEntry(version, prevVersion string, date time.Time, commits []git.Commi
 	contributorSet := make(map[string]bool)
 
 	for _, commit := range commits {
-		if skipRegex != nil && skipRegex.MatchString(commit.Message) {
+		if b.skipRegex != nil && b.skipRegex.MatchString(commit.Message) {
 			continue
 		}
 
 		// Track contributors (excluding bots)
-		if commit.Author != "" && !isExcludedAuthor(commit.Author, excludeAuthors) {
+		if commit.Author != "" && !isExcludedAuthor(commit.Author, b.excludeAuthors) {
 			contributorSet[commit.Author] = true
 		}
 
 		cc := ParseConventionalCommit(commit.Message, commit.Body, commit.Hash, commit.Author)
 		if cc == nil {
-			if includeNonConventional {
+			if b.includeNonConventional {
 				cc = ParseNonConventionalCommit(commit.Message, commit.Body, commit.Hash, commit.Author)
 			} else {
 				continue
 			}
 		}
 
-		if excludeSet[cc.Type] {
+		if b.excludeSet[cc.Type] {
 			continue
 		}
 
-		if includeBreaking && cc.Breaking {
+		if b.includeBreaking && cc.Breaking {
 			entry.Breaking = append(entry.Breaking, *cc)
 		}
 
-		typeName := TypeDisplayNameWithCustom(cc.Type, customMapping)
+		typeName := TypeDisplayNameWithCustom(cc.Type, b.customMapping)
 		entry.Sections[typeName] = append(entry.Sections[typeName], *cc)
 	}
 

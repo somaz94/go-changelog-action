@@ -43,15 +43,12 @@ func ParseConventionalCommit(message, body, hash, author string) *ConventionalCo
 		Breaking:    matches[3] == "!",
 	}
 
-	// Check for BREAKING CHANGE in body
 	if !cc.Breaking && strings.Contains(body, "BREAKING CHANGE") {
 		cc.Breaking = true
 	}
 
-	// Extract PR numbers from description like (#123)
 	cc.PRNumbers = uniqueMatches(prRegex, message)
 
-	// Extract issue references from body (closes #123, fixes #456, etc.)
 	fullText := message + "\n" + body
 	cc.Issues = uniqueMatches(issueRefRegex, fullText)
 

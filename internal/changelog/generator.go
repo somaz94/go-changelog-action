@@ -75,7 +75,6 @@ func Generate(cfg GeneratorConfig) (*Result, error) {
 		}
 	}
 
-	// Apply since/until tag filtering
 	tags = filterTags(tags, cfg.SinceTag, cfg.UntilTag)
 
 	builder := &entryBuilder{
@@ -89,7 +88,6 @@ func Generate(cfg GeneratorConfig) (*Result, error) {
 
 	var entries []Entry
 
-	// Generate unreleased section
 	if cfg.Unreleased {
 		var latestTag string
 		if len(tags) > 0 {
@@ -104,7 +102,6 @@ func Generate(cfg GeneratorConfig) (*Result, error) {
 		}
 	}
 
-	// Generate entries for each tag
 	for i, tag := range tags {
 		var fromRef string
 		var prevVersion string
@@ -217,7 +214,7 @@ func (b *entryBuilder) build(version, prevVersion string, date time.Time, commit
 			continue
 		}
 
-		// Track contributors (excluding bots)
+		// Before the type filters: authors of excluded or non-conventional commits still count.
 		if commit.Author != "" && !isExcludedAuthor(commit.Author, b.excludeAuthors) {
 			contributorSet[commit.Author] = true
 		}
@@ -243,7 +240,6 @@ func (b *entryBuilder) build(version, prevVersion string, date time.Time, commit
 		entry.Sections[typeName] = append(entry.Sections[typeName], *cc)
 	}
 
-	// Sort contributors
 	for author := range contributorSet {
 		entry.Contributors = append(entry.Contributors, author)
 	}
@@ -312,7 +308,6 @@ func renderBreakingChanges(sb *strings.Builder, entry Entry, repoURL string) {
 func renderSections(sb *strings.Builder, entry Entry, repoURL string) {
 	rendered := make(map[string]bool)
 
-	// Render sections in predefined order
 	for _, sectionName := range sectionOrder {
 		commits, ok := entry.Sections[sectionName]
 		if !ok {
@@ -363,14 +358,12 @@ func renderCommitLine(sb *strings.Builder, cc ConventionalCommit, repoURL string
 
 	var line strings.Builder
 
-	// Build description with scope
 	if cc.Scope != "" {
 		line.WriteString(fmt.Sprintf("- **%s:** %s", cc.Scope, cc.Description))
 	} else {
 		line.WriteString(fmt.Sprintf("- %s", cc.Description))
 	}
 
-	// Append PR links
 	if repoURL != "" && len(cc.PRNumbers) > 0 {
 		var prLinks []string
 		for _, pr := range cc.PRNumbers {
@@ -379,7 +372,6 @@ func renderCommitLine(sb *strings.Builder, cc ConventionalCommit, repoURL string
 		line.WriteString(fmt.Sprintf(" (%s)", strings.Join(prLinks, ", ")))
 	}
 
-	// Append issue links
 	if repoURL != "" && len(cc.Issues) > 0 {
 		var issueLinks []string
 		for _, issue := range cc.Issues {
@@ -388,7 +380,6 @@ func renderCommitLine(sb *strings.Builder, cc ConventionalCommit, repoURL string
 		line.WriteString(fmt.Sprintf(", closes %s", strings.Join(issueLinks, ", ")))
 	}
 
-	// Append commit hash link
 	if repoURL != "" {
 		line.WriteString(fmt.Sprintf(" ([%s](%s/commit/%s))", shortHash, repoURL, cc.Hash))
 	} else {

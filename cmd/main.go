@@ -41,7 +41,6 @@ func run(ctx context.Context) error {
 	output.LogInfo(fmt.Sprintf("Output file: %s", cfg.OutputFile))
 	output.LogInfo(fmt.Sprintf("Tag pattern: %s", cfg.TagPattern))
 
-	// Configure working directory
 	workDir := os.Getenv("GITHUB_WORKSPACE")
 	if workDir == "" {
 		workDir = "/app"
@@ -105,7 +104,6 @@ func run(ctx context.Context) error {
 		output.LogInfo(fmt.Sprintf("Changelog written to %s", outputPath))
 	}
 
-	// Set outputs
 	if err := output.SetOutput("changelog_file", cfg.OutputFile); err != nil {
 		output.LogWarning(fmt.Sprintf("Failed to set changelog_file output: %v", err))
 	}

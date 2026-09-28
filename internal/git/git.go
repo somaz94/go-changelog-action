@@ -144,7 +144,6 @@ func GetRemoteURL() (string, error) {
 // cleanRemoteURL converts a raw remote URL to a clean HTTPS URL.
 func cleanRemoteURL(raw string) string {
 	url := strings.TrimSpace(raw)
-	// Convert SSH URL to HTTPS
 	if strings.HasPrefix(url, "git@") {
 		url = strings.Replace(url, ":", "/", 1)
 		url = strings.Replace(url, "git@", "https://", 1)
@@ -155,7 +154,6 @@ func cleanRemoteURL(raw string) string {
 
 func parseCommits(raw string) ([]Commit, error) {
 	var commits []Commit
-	// Split by NUL byte (record separator)
 	records := strings.Split(raw, "\x00")
 	for _, record := range records {
 		record = strings.TrimSpace(record)
@@ -163,7 +161,6 @@ func parseCommits(raw string) ([]Commit, error) {
 			continue
 		}
 
-		// Split by SOH byte (field separator): hash, subject, date, author, body
 		fields := strings.SplitN(record, "\x01", 5)
 		if len(fields) < 4 {
 			continue
@@ -200,7 +197,6 @@ func parseCommits(raw string) ([]Commit, error) {
 		})
 	}
 
-	// Sort by date descending
 	sort.Slice(commits, func(i, j int) bool {
 		return commits[i].Date.After(commits[j].Date)
 	})

@@ -28,7 +28,6 @@ func TestMain(m *testing.M) {
 }
 
 func TestRunDryRun(t *testing.T) {
-	// Mock git commands
 	original := git.RunCommand
 	git.RunCommand = func(args ...string) ([]byte, error) {
 		if len(args) > 0 && args[0] == "tag" {
@@ -44,7 +43,6 @@ func TestRunDryRun(t *testing.T) {
 	}
 	defer func() { git.RunCommand = original }()
 
-	// Set env vars for dry run
 	os.Setenv("INPUT_DRY_RUN", "true")
 	os.Setenv("GITHUB_WORKSPACE", t.TempDir())
 	defer func() {
@@ -91,7 +89,6 @@ func TestRunWriteFile(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Verify file was created
 	data, err := os.ReadFile(tmpDir + "/CHANGELOG.md")
 	if err != nil {
 		t.Fatalf("expected changelog file to exist: %v", err)
@@ -138,7 +135,6 @@ func TestRunWriteFileWithGitHubOutput(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Verify GITHUB_OUTPUT was written
 	data, err := os.ReadFile(outputFile)
 	if err != nil {
 		t.Fatalf("failed to read GITHUB_OUTPUT: %v", err)
@@ -339,7 +335,7 @@ func TestRunCancelled(t *testing.T) {
 	defer os.Unsetenv("GITHUB_WORKSPACE")
 
 	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // Cancel immediately
+	cancel()
 
 	err := run(ctx)
 	if err == nil {

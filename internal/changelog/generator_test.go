@@ -138,7 +138,6 @@ func TestRenderMarkdown(t *testing.T) {
 	if !strings.Contains(content, "# Changelog") {
 		t.Error("expected header")
 	}
-	// Compare link
 	if !strings.Contains(content, "compare/v0.9.0...v1.0.0") {
 		t.Error("expected compare link between versions")
 	}
@@ -154,15 +153,12 @@ func TestRenderMarkdown(t *testing.T) {
 	if !strings.Contains(content, "2024-01-15") {
 		t.Error("expected formatted date")
 	}
-	// PR link
 	if !strings.Contains(content, "[#42]") {
 		t.Error("expected PR link")
 	}
-	// Issue link
 	if !strings.Contains(content, "closes") {
 		t.Error("expected issue close reference")
 	}
-	// Contributors
 	if !strings.Contains(content, "### Contributors") {
 		t.Error("expected Contributors section")
 	}
@@ -246,7 +242,6 @@ func TestRenderMarkdownUnreleased(t *testing.T) {
 
 	content := renderMarkdown(entries, "# Changelog", "2006-01-02", "https://github.com/owner/repo")
 
-	// Unreleased should not have a compare link
 	if strings.Contains(content, "compare/") {
 		t.Error("unreleased should not have compare link")
 	}
@@ -256,7 +251,6 @@ func TestRenderMarkdownUnreleased(t *testing.T) {
 }
 
 func TestRenderMarkdownFirstVersionNoPrev(t *testing.T) {
-	// When PrevVersion is empty, first version should link to release tag
 	entries := []Entry{
 		{
 			Version:     "v1.0.0",
@@ -272,7 +266,6 @@ func TestRenderMarkdownFirstVersionNoPrev(t *testing.T) {
 
 	content := renderMarkdown(entries, "# Changelog", "2006-01-02", "https://github.com/owner/repo")
 
-	// First version with no PrevVersion should link to release tag
 	if !strings.Contains(content, "releases/tag/v1.0.0") {
 		t.Error("expected release tag link for first version")
 	}
@@ -346,7 +339,6 @@ func TestRenderMarkdownNoRepoURL(t *testing.T) {
 
 	content := renderMarkdown(entries, "# Changelog", "2006-01-02", "")
 
-	// Without repo URL, should just show hash without link
 	if strings.Contains(content, "github.com") {
 		t.Error("should not contain github links without repo URL")
 	}
@@ -405,14 +397,12 @@ func TestGenerate(t *testing.T) {
 	restore := mockGitRunnerFunc(func(args ...string) ([]byte, error) {
 		callCount++
 		if len(args) > 0 && args[0] == "tag" {
-			// Return two tags
 			return []byte("v2.0.0|abc1234|2024-02-01T00:00:00Z\nv1.0.0|def5678|2024-01-01T00:00:00Z\n"), nil
 		}
 		if len(args) > 0 && args[0] == "remote" {
 			return []byte("https://github.com/owner/repo.git\n"), nil
 		}
 		if len(args) > 0 && args[0] == "log" {
-			// Return a commit
 			return []byte("aaa111\x01feat: new feature\x012024-01-15T10:00:00Z\x01alice\x01\x00"), nil
 		}
 		return []byte(""), nil
@@ -619,7 +609,6 @@ func TestGenerateRemoteURLError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// Should still generate content, just without links
 	if result.EntriesCount == 0 {
 		t.Error("expected entries even without remote URL")
 	}
@@ -653,7 +642,6 @@ func TestGenerateGetCommitsBetweenError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// Should produce result with 0 entries since commits failed
 	if result.EntriesCount != 0 {
 		t.Errorf("expected 0 entries when commits fail, got %d", result.EntriesCount)
 	}

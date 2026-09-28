@@ -65,7 +65,6 @@ func TestSetOutputMultiline(t *testing.T) {
 func TestSetOutputFallback(t *testing.T) {
 	os.Unsetenv("GITHUB_OUTPUT")
 
-	// Should not error when GITHUB_OUTPUT is not set (fallback mode)
 	err := SetOutput("key", "value")
 	if err != nil {
 		t.Fatalf("unexpected error in fallback mode: %v", err)

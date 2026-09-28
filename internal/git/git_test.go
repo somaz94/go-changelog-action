@@ -58,8 +58,6 @@ func TestConvertGlobToRegexQuestionMark(t *testing.T) {
 	}
 }
 
-// New format: hash\x01subject\x01date\x01author\x01body\x00
-
 func TestParseCommits(t *testing.T) {
 	commits, err := parseCommits("")
 	if err != nil {
@@ -173,7 +171,6 @@ func TestParseCommitsThreeCommits(t *testing.T) {
 }
 
 func TestParseCommitsEmptyHash(t *testing.T) {
-	// Records with empty hash should be skipped
 	input := "\x01some subject\x012024-01-01T10:00:00Z\x01author\x01\x00"
 	commits, err := parseCommits(input)
 	if err != nil {
@@ -183,8 +180,6 @@ func TestParseCommitsEmptyHash(t *testing.T) {
 		t.Errorf("expected 0 commits for empty hash, got %d", len(commits))
 	}
 }
-
-// --- Tests for parseTags ---
 
 func TestParseTags(t *testing.T) {
 	output := "v2.0.0|abc1234|2024-02-01T00:00:00Z\nv1.0.0|def5678|2024-01-01T00:00:00Z\nrelease-1.0|ghi9012|2024-01-15T00:00:00Z"
@@ -234,8 +229,6 @@ func TestParseTagsInvalidPattern(t *testing.T) {
 	}
 }
 
-// --- Tests for cleanRemoteURL ---
-
 func TestCleanRemoteURL(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -257,8 +250,6 @@ func TestCleanRemoteURL(t *testing.T) {
 		})
 	}
 }
-
-// --- Tests for GetTags with mock ---
 
 func TestGetTags(t *testing.T) {
 	restore := mockRunner([]byte("v2.0.0|abc1234|2024-02-01T00:00:00Z\nv1.0.0|def5678|2024-01-01T00:00:00Z\n"), nil)
@@ -282,8 +273,6 @@ func TestGetTagsError(t *testing.T) {
 		t.Fatal("expected error")
 	}
 }
-
-// --- Tests for GetCommitsBetween with mock ---
 
 func TestGetCommitsBetween(t *testing.T) {
 	mockOutput := "abc123\x01feat: feature\x012024-01-15T10:00:00Z\x01alice\x01\x00"
@@ -323,8 +312,6 @@ func TestGetCommitsBetweenError(t *testing.T) {
 	}
 }
 
-// --- Tests for GetCommitsSinceTag with mock ---
-
 func TestGetCommitsSinceTag(t *testing.T) {
 	mockOutput := "abc123\x01feat: new\x012024-01-15T10:00:00Z\x01alice\x01\x00"
 	restore := mockRunner([]byte(mockOutput), nil)
@@ -362,8 +349,6 @@ func TestGetCommitsSinceTagError(t *testing.T) {
 		t.Fatal("expected error")
 	}
 }
-
-// --- Tests for GetRemoteURL with mock ---
 
 func TestGetRemoteURL(t *testing.T) {
 	restore := mockRunner([]byte("https://github.com/owner/repo.git\n"), nil)

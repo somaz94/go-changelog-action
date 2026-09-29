@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.1.2](https://github.com/somaz94/go-changelog-action/compare/v1.1.1...v1.1.2) (2026-09-29)
+
+### Bug Fixes
+
+- configure git through the process environment instead of ~/.gitconfig ([7996642](https://github.com/somaz94/go-changelog-action/commit/79966420f7a9716f79baca5abfab63b50e8c6c3f))
+
+### Chores
+
+- bump the action image to v1.1.2 ([25805ae](https://github.com/somaz94/go-changelog-action/commit/25805ae55ad4c9e2cf21bf380bbee16875f88b9c))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.1.1](https://github.com/somaz94/go-changelog-action/compare/v1.1.0...v1.1.1) (2026-09-29)
 
 ### Bug Fixes

@@ -11,8 +11,8 @@ import (
 func SetOutput(name, value string) (err error) {
 	outputFile := os.Getenv("GITHUB_OUTPUT")
 	if outputFile == "" {
-		// Fallback for local testing
-		fmt.Printf("::set-output name=%s::%s\n", name, value)
+		// Local or bare docker run; ::set-output is deprecated, so print plainly.
+		fmt.Printf("%s=%s\n", name, value)
 		return nil
 	}
 

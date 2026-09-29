@@ -65,9 +65,25 @@ func TestSetOutputMultiline(t *testing.T) {
 func TestSetOutputFallback(t *testing.T) {
 	os.Unsetenv("GITHUB_OUTPUT")
 
+	r, w, _ := os.Pipe()
+	oldStdout := os.Stdout
+	os.Stdout = w
+
 	err := SetOutput("key", "value")
+
+	w.Close()
+	os.Stdout = oldStdout
+
 	if err != nil {
 		t.Fatalf("unexpected error in fallback mode: %v", err)
+	}
+
+	buf := make([]byte, 256)
+	n, _ := r.Read(buf)
+	output := string(buf[:n])
+
+	if output != "key=value\n" {
+		t.Errorf("expected %q, got %q", "key=value\n", output)
 	}
 }
 

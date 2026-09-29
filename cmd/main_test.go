@@ -4,30 +4,40 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/somaz94/go-changelog-action/internal/git"
 )
 
-// TestMain isolates git's global/system config into throwaway temp files so the
-// `git config --global --add safe.directory` call in run() never accumulates
-// stale entries in the developer's real ~/.gitconfig during tests.
-func TestMain(m *testing.M) {
-	dir, err := os.MkdirTemp("", "go-changelog-action-gitconfig")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create temp gitconfig dir: %v\n", err)
-		os.Exit(1)
+// isolateGitConfigEnv starts the test with no GIT_CONFIG_COUNT/KEY_<n>/VALUE_<n>
+// set; t.Setenv restores the originals and the cleanup drops entries run() added.
+func isolateGitConfigEnv(t *testing.T) {
+	t.Helper()
+	for _, name := range append(gitConfigEntryNames(), "GIT_CONFIG_COUNT") {
+		t.Setenv(name, "")
+		os.Unsetenv(name)
 	}
-	os.Setenv("GIT_CONFIG_GLOBAL", filepath.Join(dir, "config"))
-	os.Setenv("GIT_CONFIG_SYSTEM", os.DevNull)
-	code := m.Run()
-	_ = os.RemoveAll(dir)
-	os.Exit(code)
+	t.Cleanup(func() {
+		for _, name := range gitConfigEntryNames() {
+			os.Unsetenv(name)
+		}
+	})
+}
+
+func gitConfigEntryNames() []string {
+	var names []string
+	for _, kv := range os.Environ() {
+		name, _, _ := strings.Cut(kv, "=")
+		if strings.HasPrefix(name, "GIT_CONFIG_KEY_") || strings.HasPrefix(name, "GIT_CONFIG_VALUE_") {
+			names = append(names, name)
+		}
+	}
+	return names
 }
 
 func TestRunDryRun(t *testing.T) {
+	isolateGitConfigEnv(t)
 	original := git.RunCommand
 	git.RunCommand = func(args ...string) ([]byte, error) {
 		if len(args) > 0 && args[0] == "tag" {
@@ -58,6 +68,7 @@ func TestRunDryRun(t *testing.T) {
 }
 
 func TestRunWriteFile(t *testing.T) {
+	isolateGitConfigEnv(t)
 	original := git.RunCommand
 	git.RunCommand = func(args ...string) ([]byte, error) {
 		if len(args) > 0 && args[0] == "tag" {
@@ -99,6 +110,7 @@ func TestRunWriteFile(t *testing.T) {
 }
 
 func TestRunWriteFileWithGitHubOutput(t *testing.T) {
+	isolateGitConfigEnv(t)
 	original := git.RunCommand
 	git.RunCommand = func(args ...string) ([]byte, error) {
 		if len(args) > 0 && args[0] == "tag" {
@@ -145,6 +157,7 @@ func TestRunWriteFileWithGitHubOutput(t *testing.T) {
 }
 
 func TestRunInvalidWorkDir(t *testing.T) {
+	isolateGitConfigEnv(t)
 	original := git.RunCommand
 	git.RunCommand = func(args ...string) ([]byte, error) {
 		return []byte(""), nil
@@ -165,6 +178,7 @@ func TestRunInvalidWorkDir(t *testing.T) {
 }
 
 func TestRunGenerateError(t *testing.T) {
+	isolateGitConfigEnv(t)
 	original := git.RunCommand
 	git.RunCommand = func(args ...string) ([]byte, error) {
 		if len(args) > 0 && args[0] == "tag" {
@@ -189,6 +203,7 @@ func TestRunGenerateError(t *testing.T) {
 }
 
 func TestRunDefaultWorkDir(t *testing.T) {
+	isolateGitConfigEnv(t)
 	original := git.RunCommand
 	git.RunCommand = func(args ...string) ([]byte, error) {
 		return []byte(""), nil
@@ -209,6 +224,7 @@ func TestRunDefaultWorkDir(t *testing.T) {
 }
 
 func TestRunWriteFileError(t *testing.T) {
+	isolateGitConfigEnv(t)
 	original := git.RunCommand
 	git.RunCommand = func(args ...string) ([]byte, error) {
 		if len(args) > 0 && args[0] == "tag" {
@@ -246,6 +262,7 @@ func TestRunWriteFileError(t *testing.T) {
 }
 
 func TestRunAbsoluteOutputFile(t *testing.T) {
+	isolateGitConfigEnv(t)
 	original := git.RunCommand
 	git.RunCommand = func(args ...string) ([]byte, error) {
 		if len(args) > 0 && args[0] == "tag" {
@@ -288,6 +305,7 @@ func TestRunAbsoluteOutputFile(t *testing.T) {
 }
 
 func TestRunPathTraversal(t *testing.T) {
+	isolateGitConfigEnv(t)
 	original := git.RunCommand
 	git.RunCommand = func(args ...string) ([]byte, error) {
 		if len(args) > 0 && args[0] == "tag" {
@@ -324,6 +342,7 @@ func TestRunPathTraversal(t *testing.T) {
 }
 
 func TestRunCancelled(t *testing.T) {
+	isolateGitConfigEnv(t)
 	original := git.RunCommand
 	git.RunCommand = func(args ...string) ([]byte, error) {
 		return []byte(""), nil
@@ -343,5 +362,56 @@ func TestRunCancelled(t *testing.T) {
 	}
 	if err.Error() != "cancelled" {
 		t.Errorf("expected 'cancelled' error, got %q", err.Error())
+	}
+}
+
+func mockDryRunGit(t *testing.T) {
+	t.Helper()
+	original := git.RunCommand
+	git.RunCommand = func(args ...string) ([]byte, error) {
+		if len(args) > 0 && args[0] == "tag" {
+			return []byte("v1.0.0|abc1234|2024-01-01T00:00:00Z\n"), nil
+		}
+		if len(args) > 0 && args[0] == "log" {
+			return []byte("aaa111\x01feat: feature\x012024-01-15T10:00:00Z\x01alice\x01\x00"), nil
+		}
+		return []byte(""), nil
+	}
+	t.Cleanup(func() { git.RunCommand = original })
+	t.Setenv("INPUT_DRY_RUN", "true")
+}
+
+func TestRunInjectsSafeDirectoryEnv(t *testing.T) {
+	isolateGitConfigEnv(t)
+	mockDryRunGit(t)
+	tmpDir := t.TempDir()
+	t.Setenv("GITHUB_WORKSPACE", tmpDir)
+
+	if err := run(context.Background()); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	for name, want := range map[string]string{
+		"GIT_CONFIG_COUNT":   "1",
+		"GIT_CONFIG_KEY_0":   "safe.directory",
+		"GIT_CONFIG_VALUE_0": tmpDir,
+	} {
+		if got := os.Getenv(name); got != want {
+			t.Errorf("expected %s=%q, got %q", name, want, got)
+		}
+	}
+}
+
+func TestRunInvalidGitConfigCountOnlyWarns(t *testing.T) {
+	isolateGitConfigEnv(t)
+	mockDryRunGit(t)
+	t.Setenv("GITHUB_WORKSPACE", t.TempDir())
+	t.Setenv("GIT_CONFIG_COUNT", "bogus")
+
+	if err := run(context.Background()); err != nil {
+		t.Fatalf("expected an invalid GIT_CONFIG_COUNT to only warn, got: %v", err)
+	}
+	if got := os.Getenv("GIT_CONFIG_COUNT"); got != "bogus" {
+		t.Errorf("expected GIT_CONFIG_COUNT to stay %q, got %q", "bogus", got)
 	}
 }

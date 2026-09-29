@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"strconv"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/somaz94/go-changelog-action/internal/changelog"
 	"github.com/somaz94/go-changelog-action/internal/config"
+	"github.com/somaz94/go-changelog-action/internal/git"
 	"github.com/somaz94/go-changelog-action/internal/output"
 )
 
@@ -50,8 +50,8 @@ func run(ctx context.Context) error {
 		return fmt.Errorf("failed to change directory to %s: %w", workDir, err)
 	}
 
-	// Configure git safe directory to avoid ownership issues in containers
-	if err := exec.CommandContext(ctx, "git", "config", "--global", "--add", "safe.directory", workDir).Run(); err != nil {
+	// Trust the workspace despite container ownership, via env so no config file is written.
+	if err := git.AddConfigEnv("safe.directory", workDir); err != nil {
 		output.LogWarning(fmt.Sprintf("Failed to set git safe.directory: %v", err))
 	}
 

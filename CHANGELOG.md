@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.1.1](https://github.com/somaz94/go-changelog-action/compare/v1.1.0...v1.1.1) (2026-09-29)
+
+### Bug Fixes
+
+- print outputs plainly instead of the deprecated set-output command ([335c3a3](https://github.com/somaz94/go-changelog-action/commit/335c3a3c3863b2f54c207d99d494d665c59c5edc))
+
+### Tests
+
+- drop comments that restate assertions and test names ([0d2505f](https://github.com/somaz94/go-changelog-action/commit/0d2505feab50ea22787b1d759225cea3e9cedc28))
+
+### Builds
+
+- **deps:** bump golang in the docker-minor group (#7) ([#7](https://github.com/somaz94/go-changelog-action/pull/7)) ([bf9add8](https://github.com/somaz94/go-changelog-action/commit/bf9add85dcbf6da0a1cecdc00d95f03af691762f))
+
+### Continuous Integration
+
+- correct the image-seeding comment in the release workflow ([bda26b1](https://github.com/somaz94/go-changelog-action/commit/bda26b1dad74772167c29e0bb2f7ea84260f1480))
+- retry mirror pushes on transient remote failures ([3d1a444](https://github.com/somaz94/go-changelog-action/commit/3d1a4447b96d97dfcd8e48f3e758549ba373f89d))
+- drop the dead issue-close trigger from changelog generation ([12593a7](https://github.com/somaz94/go-changelog-action/commit/12593a74bb977ecf24a5a482589675b56bdea584))
+- skip release-triggered runs on the image-seeding dispatch ([a9d96cd](https://github.com/somaz94/go-changelog-action/commit/a9d96cdfef4eacb8d234749c66a61af4da495df6))
+
+### Chores
+
+- bump the action image to v1.1.1 ([451c8c8](https://github.com/somaz94/go-changelog-action/commit/451c8c82fb6ec19b09e46c308799075dd82c96ed))
+- drop comments that restate the code in Go sources ([22463a6](https://github.com/somaz94/go-changelog-action/commit/22463a668bb86084c685c8c9395176bed9b6e7a4))
+- trim stale and over-long comments in CI and build config ([d25b7d6](https://github.com/somaz94/go-changelog-action/commit/d25b7d69bf11944bee0135c27402b2f79e574493))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.1.0](https://github.com/somaz94/go-changelog-action/compare/v1.0.10...v1.1.0) (2026-08-07)
 
 ### Performance Improvements

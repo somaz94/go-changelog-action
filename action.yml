@@ -89,7 +89,7 @@ runs:
   # (~31s). Subtle: this version's image must be published (release.yml
   # workflow_dispatch) before its git tag is pushed, and a runner can pull only
   # the pushed platforms (linux/amd64, linux/arm64).
-  image: docker://ghcr.io/somaz94/go-changelog-action:v1.1.0
+  image: docker://ghcr.io/somaz94/go-changelog-action:v1.1.1
   env:
     INPUT_OUTPUT_FILE: ${{ inputs.output_file }}
     INPUT_TAG_PATTERN: ${{ inputs.tag_pattern }}

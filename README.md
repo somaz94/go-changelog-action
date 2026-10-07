@@ -283,7 +283,7 @@ To disable filtering and include all authors:
 
 ### Prerequisites
 
-- Go 1.26+
+- Go (the version in `go.mod`)
 - Docker (for container builds)
 
 <br/>

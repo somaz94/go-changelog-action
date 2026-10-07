@@ -46,6 +46,6 @@ Default excluded authors: `GitHub Action, GitHub Actions, dependabot[bot], renov
 ## CI
 
 - `ci.yml` — Unit tests (90% coverage threshold), Docker build & dry-run, action integration test
-- Docker: multi-stage build (golang:1.26-alpine → alpine:3.23)
+- Docker: multi-stage build (golang alpine builder → alpine runtime; image versions are pinned in `Dockerfile`)
 
 <br/>
